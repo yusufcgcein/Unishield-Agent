@@ -22,7 +22,7 @@
 !define MUI_UNICON uninstall.ico
 !define VERSION "4.14.7"
 !define REVISION "rc1"
-!define NAME "Unishield"
+!define NAME "Unishield 360"
 !define SERVICE "WazuhSvc"
 
 ; output file
@@ -38,12 +38,12 @@ OutFile "${OutFile}"
 
 VIProductVersion "4.14.7.0"
 VIAddVersionKey ProductName "${NAME}"
-VIAddVersionKey CompanyName "Unishield"
-VIAddVersionKey LegalCopyright "2023 - Unishield"
-VIAddVersionKey FileDescription "Unishield Agent installer"
+VIAddVersionKey CompanyName "Unishield 360"
+VIAddVersionKey LegalCopyright "2023 - Unishield 360"
+VIAddVersionKey FileDescription "Unishield 360 Agent installer"
 VIAddVersionKey FileVersion "${VERSION}"
 VIAddVersionKey ProductVersion "${VERSION}"
-VIAddVersionKey InternalName "Unishield Agent"
+VIAddVersionKey InternalName "Unishield 360 Agent"
 VIAddVersionKey OriginalFilename "${OutFile}"
 
 InstallDir "$PROGRAMFILES\ossec-agent"
@@ -95,51 +95,36 @@ Function .onInit
     StrCpy $is_upgrade "no"
 
     ; stop service
-    SimpleSC::ExistsService "${SERVICE}"
+    nsExec::ExecToStack 'sc query "${SERVICE}"'
     Pop $0
-    ${If} $0 = 0
-        SimpleSC::ServiceIsStopped "${SERVICE}"
+    Pop $1
+    StrCmp $0 "0" 0 ServiceStopped
+    MessageBox MB_OKCANCEL "${NAME} is already installed and the ${SERVICE} service is running. \
+        It will be stopped before continuing." /SD IDOK IDOK ServiceStop
+    SetErrorLevel 2
+    Abort
+
+    ServiceStop:
+        nsExec::ExecToStack 'sc stop "${SERVICE}"'
         Pop $0
         Pop $1
-        ${If} $0 = 0
-            ${If} $1 <> 1
-                MessageBox MB_OKCANCEL "${NAME} is already installed and the ${SERVICE} service is running. \
-                    It will be stopped before continuing." /SD IDOK IDOK ServiceStop
-                SetErrorLevel 2
-                Abort
-
-                ServiceStop:
-                    SimpleSC::StopService "${SERVICE}" 1 30
-                    Pop $0
-                    ${If} $0 <> 0
-                        MessageBox MB_ABORTRETRYIGNORE|MB_ICONSTOP "$\r$\n\
-                            Failure stopping the ${SERVICE} service ($0).$\r$\n$\r$\n\
-                            Click Abort to stop the installation,$\r$\n\
-                            Retry to try again, or$\r$\n\
-                            Ignore to skip this file." /SD IDABORT IDIGNORE ServiceStopped IDRETRY ServiceStop
-
-                        SetErrorLevel 2
-                        Abort
-                    ${Else}
-                        StrCpy $is_upgrade "yes"
-                    ${EndIf}
-            ${EndIf}
-        ${Else}
+        ${If} $0 <> 0
             MessageBox MB_ABORTRETRYIGNORE|MB_ICONSTOP "$\r$\n\
-                Failure checking status of the ${SERVICE} service ($0).$\r$\n$\r$\n\
+                Failure stopping the ${SERVICE} service ($0).$\r$\n$\r$\n\
                 Click Abort to stop the installation,$\r$\n\
                 Retry to try again, or$\r$\n\
                 Ignore to skip this file." /SD IDABORT IDIGNORE ServiceStopped IDRETRY ServiceStop
 
             SetErrorLevel 2
             Abort
+        ${Else}
+            StrCpy $is_upgrade "yes"
         ${EndIf}
-    ${EndIf}
     ServiceStopped:
 FunctionEnd
 
 ; main install section
-Section "Unishield Agent (required)" MainSec
+Section "Unishield 360 Agent (required)" MainSec
     ; set install type and cwd
     SectionIn RO
     SetOutPath $INSTDIR
@@ -239,7 +224,7 @@ Section "Unishield Agent (required)" MainSec
     WriteRegStr HKLM SOFTWARE\ossec "Install_Dir" "$INSTDIR"
     WriteRegStr HKLM "Software\Microsoft\Windows\CurrentVersion\Uninstall\OSSEC" "DisplayName" "${NAME} Agent"
     WriteRegStr HKLM "Software\Microsoft\Windows\CurrentVersion\Uninstall\OSSEC" "DisplayVersion" "${VERSION}"
-    WriteRegStr HKLM "Software\Microsoft\Windows\CurrentVersion\Uninstall\OSSEC" "Publisher" "Unishield"
+    WriteRegStr HKLM "Software\Microsoft\Windows\CurrentVersion\Uninstall\OSSEC" "Publisher" "Unishield 360"
     WriteRegStr HKLM "Software\Microsoft\Windows\CurrentVersion\Uninstall\OSSEC" "DisplayIcon" '"$INSTDIR\favicon.ico"'
     WriteRegStr HKLM "Software\Microsoft\Windows\CurrentVersion\Uninstall\OSSEC" "UninstallString" '"$INSTDIR\uninstall.exe"'
     ${GetSize} "$INSTDIR" "/S=0K" $0 $1 $2
@@ -331,11 +316,11 @@ Section "Unishield Agent (required)" MainSec
     RMDir "$SMPROGRAMS\OSSEC"
 
     ; create shortcuts
-    CreateDirectory "$SMPROGRAMS\Unishield"
-    CreateShortCut "$SMPROGRAMS\Unishield\Manage Agent.lnk" "$INSTDIR\win32ui.exe" "" "$INSTDIR\win32ui.exe" 0
-    CreateShortCut "$SMPROGRAMS\Unishield\Documentation.lnk" "$INSTDIR\doc.html" "" "$INSTDIR\doc.html" 0
-    CreateShortCut "$SMPROGRAMS\Unishield\Edit Config.lnk" "$INSTDIR\ossec.conf" "" "$INSTDIR\ossec.conf" 0
-    CreateShortCut "$SMPROGRAMS\Unishield\Uninstall.lnk" "$INSTDIR\uninstall.exe" "" "$INSTDIR\uninstall.exe" 0
+    CreateDirectory "$SMPROGRAMS\Unishield 360"
+    CreateShortCut "$SMPROGRAMS\Unishield 360\Manage Agent.lnk" "$INSTDIR\win32ui.exe" "" "$INSTDIR\win32ui.exe" 0
+    CreateShortCut "$SMPROGRAMS\Unishield 360\Documentation.lnk" "$INSTDIR\doc.html" "" "$INSTDIR\doc.html" 0
+    CreateShortCut "$SMPROGRAMS\Unishield 360\Edit Config.lnk" "$INSTDIR\ossec.conf" "" "$INSTDIR\ossec.conf" 0
+    CreateShortCut "$SMPROGRAMS\Unishield 360\Uninstall.lnk" "$INSTDIR\uninstall.exe" "" "$INSTDIR\uninstall.exe" 0
 
     ; install OSSEC service
     ServiceInstall:
@@ -378,12 +363,13 @@ Section "Unishield Agent (required)" MainSec
     ${EndIf}
 
     StartService:
-        SimpleSC::ExistsService "${SERVICE}"
+        nsExec::ExecToStack 'sc query "${SERVICE}"'
         Pop $0
+        Pop $1
         ${If} $0 = 0
-            ; StartService [name_of_service] [arguments] [timeout]
-            SimpleSC::StartService "${SERVICE}" "" 30
+            nsExec::ExecToStack 'sc start "${SERVICE}"'
             Pop $0
+            Pop $1
             ${If} $0 <> 0
                 MessageBox MB_RETRYCANCEL  "$\r$\n\
                     Failure starting the ${SERVICE} ($0).$\r$\n$\r$\n\
@@ -503,9 +489,9 @@ Section "Uninstall"
     Delete "$SMPROGRAMS\OSSEC\*.*"
     Delete "$SMPROGRAMS\OSSEC\*"
     RMDir "$SMPROGRAMS\OSSEC"
-    Delete "$SMPROGRAMS\Unishield\*.*"
-    Delete "$SMPROGRAMS\Unishield\*"
-    RMDir "$SMPROGRAMS\Unishield"
+    Delete "$SMPROGRAMS\Unishield 360\*.*"
+    Delete "$SMPROGRAMS\Unishield 360\*"
+    RMDir "$SMPROGRAMS\Unishield 360"
 
     ; remove directories used
     RMDir "$INSTDIR\shared"

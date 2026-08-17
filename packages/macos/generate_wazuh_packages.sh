@@ -175,9 +175,9 @@ function build_package() {
 
     # Define output package name
     if [ $IS_STAGE == "no" ]; then
-        pkg_name="wazuh-agent_${VERSION}-${REVISION}_${ARCH}_${short_commit_hash}"
+        pkg_name="unishield-agent_${VERSION}-${REVISION}_${ARCH}_${short_commit_hash}"
     else
-        pkg_name="wazuh-agent-${VERSION}-${REVISION}.${ARCH}"
+        pkg_name="unishield-agent-${VERSION}-${REVISION}.${ARCH}"
     fi
 
     if [ -d "${INSTALLATION_PATH}" ]; then
@@ -199,7 +199,7 @@ function build_package() {
     if munkipkg $CURRENT_PATH/wazuh-agent ; then
         echo "The wazuh agent package for macOS has been successfully built."
         mv $CURRENT_PATH/wazuh-agent/build/* $DESTINATION/
-        symbols_pkg_name="wazuh-agent-debug-symbols-${VERSION}-${REVISION}.${ARCH}-macos"
+        symbols_pkg_name="unishield-agent-debug-symbols-${VERSION}-${REVISION}.${ARCH}-macos"
         cp -R "${WAZUH_PATH}/src/symbols"  "${DESTINATION}"
         zip -r "${DESTINATION}/${symbols_pkg_name}.zip" "${DESTINATION}/symbols"
         rm -rf "${DESTINATION}/symbols"

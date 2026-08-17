@@ -43,7 +43,7 @@ int gen_server_info(HWND hwnd)
     SetDlgItemText(hwnd, UI_SERVER_TEXT, config_inst.server);
 
     /* Set status data */
-    SendMessage(hStatus, SB_SETTEXT, 0, (LPARAM)"Unishield Agent");
+    SendMessage(hStatus, SB_SETTEXT, 0, (LPARAM)"Unishield 360 Agent");
     if (config_inst.revision) {
         SendMessage(hStatus, SB_SETTEXT, 1, (LPARAM)config_inst.revision);
     }
@@ -226,9 +226,9 @@ int config_read(__attribute__((unused)) HWND hwnd)
             size_t len = strlen(tmp_str);
             char prefixed_version[len + 2];
             snprintf(prefixed_version, sizeof(prefixed_version), "v%s", tmp_str);
-            snprintf(buffer, sizeof(buffer), "Unishield %s", prefixed_version);
+            snprintf(buffer, sizeof(buffer), "Unishield 360 %s", prefixed_version);
         } else {
-            snprintf(buffer, sizeof(buffer), "Unishield %s", tmp_str);
+            snprintf(buffer, sizeof(buffer), "Unishield 360 %s", tmp_str);
         }
 
         os_strdup(buffer, config_inst.version);

@@ -100,7 +100,7 @@ BOOL CALLBACK DlgProc(HWND hwnd, UINT Message, WPARAM wParam,
             SendMessage(hStatus, SB_SETPARTS,
                         sizeof(statwidths) / sizeof(int),
                         (LPARAM)statwidths);
-            SendMessage(hStatus, SB_SETTEXT, 0, (LPARAM)"Unishield Agent");
+            SendMessage(hStatus, SB_SETTEXT, 0, (LPARAM)"Unishield 360 Agent");
 
 
             /* Initializing config */

@@ -8,17 +8,17 @@
   %define _rpmfilename %%{NAME}-%%{VERSION}-%%{RELEASE}.%%{ARCH}.rpm
 %endif
 
-Summary:     Wazuh helps you to gain security visibility into your infrastructure by monitoring hosts at an operating system and application level. It provides the following capabilities: log analysis, file integrity monitoring, intrusions detection and policy and compliance monitoring
+Summary:     Unishield 360 helps you to gain security visibility into your infrastructure by monitoring hosts at an operating system and application level. It provides the following capabilities: log analysis, file integrity monitoring, intrusions detection and policy and compliance monitoring
 Name:        wazuh-agent
 Version:     %{_version}
 Release:     %{_release}
 License:     GPL
 Group:       System Environment/Daemons
 Source0:     %{name}-%{version}.tar.gz
-URL:         https://www.wazuh.com/
+URL:         https://www.unishield360.com/
 BuildRoot:   %{_tmppath}/%{name}-%{version}-%{release}-root-%(%{__id_u} -n)
-Vendor:      Wazuh <info@wazuh.com>
-Packager:    Wazuh <info@wazuh.com>
+Vendor:      Unishield 360 <support@unishield360.com>
+Packager:    Unishield 360 <support@unishield360.com>
 Requires(pre):    /usr/sbin/groupadd /usr/sbin/useradd
 Requires(postun): /usr/sbin/groupdel /usr/sbin/userdel
 Conflicts:   ossec-hids ossec-hids-agent wazuh-manager wazuh-local
@@ -34,7 +34,7 @@ BuildRequires: coreutils glibc-devel automake autoconf libtool policycoreutils p
 ExclusiveOS: linux
 
 %description
-Wazuh helps you to gain security visibility into your infrastructure by monitoring
+Unishield 360 helps you to gain security visibility into your infrastructure by monitoring
 hosts at an operating system and application level. It provides the following capabilities:
 log analysis, file integrity monitoring, intrusions detection and policy and compliance monitoring
 

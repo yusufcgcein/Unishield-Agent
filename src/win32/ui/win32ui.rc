@@ -19,27 +19,27 @@ IDI_OSSECICON ICON "favicon.ico"
 
 IDD_ABOUT DIALOG DISCARDABLE  0, 0, 259, 106
 STYLE DS_MODALFRAME | WS_POPUP | WS_CAPTION | WS_SYSMENU
-CAPTION "About Unishield"
+CAPTION "About Unishield 360"
 FONT 8, "MS Sans Serif"
 BEGIN
     DEFPUSHBUTTON  "&Close",UI_ID_CLOSE,90,90,50,14
-    GROUPBOX       " Copyright (C) 2023, Unishield",
+    GROUPBOX       " Copyright (C) 2023, Unishield 360",
                    IDC_STATIC,7,7,245,82
     CTEXT   "This program is a free software; you can redistribute it" \
             " and/or modify it under the terms of the GNU General" \
             " Public License (version 2) as published by the FSF" \
             " - Free Software Foundation\r\n\r\n" \
-            "Copyright (C) 2023, Unishield",
+            "Copyright (C) 2023, Unishield 360",
             IDC_STATIC,16,18,200,63
 END
 
 
 IDD_MAIN DIALOG DISCARDABLE  0, 0, 212, 156
 STYLE DS_MODALFRAME | DS_CENTER | WS_POPUP | WS_CAPTION | WS_SYSMENU
-CAPTION "Unishield Agent"
+CAPTION "Unishield 360 Agent"
 FONT 8, "MS Sans Serif"
 BEGIN
-    GROUPBOX  " ~Unishield Windows Agent~ ", UI_SERVER_TOP, 7,7, 193, 57
+    GROUPBOX  " ~Unishield 360 Windows Agent~ ", UI_SERVER_TOP, 7,7, 193, 57
     LTEXT     " No Information available.", UI_SERVER_INFO, 16, 22, 150, 40
 
     LTEXT     "Manager IP: ",IDC_STATIC,7,76,62,8

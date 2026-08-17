@@ -61,7 +61,7 @@ function get_wazuh_installation_directory {
     Start-NativePowerShell {
         # Registry paths to check (in order of preference)
         $registryPaths = @(
-            @{Path = "HKLM:\SOFTWARE\WOW6432Node\Unishield\Unishield Agent"; Key = "WazuhInstallDir"},
+            @{Path = "HKLM:\SOFTWARE\WOW6432Node\Unishield\Unishield 360 Agent"; Key = "WazuhInstallDir"},
             @{Path = "HKLM:\SOFTWARE\WOW6432Node\Wazuh, Inc.\Wazuh Agent"; Key = "WazuhInstallDir"},
             @{Path = "HKLM:\SOFTWARE\WOW6432Node\Wazuh\Wazuh Agent"; Key = "WazuhInstallDir"},
             @{Path = "HKLM:\SOFTWARE\WOW6432Node\ossec"; Key = "Install_Dir"}
@@ -99,7 +99,7 @@ function check-process {
     $counter = 10
     while($process_id -eq $null -And $counter -gt 0) {
         $counter--
-        Start-Service -Name "Unishield"
+        Start-Service -Name "Unishield 360"
         Start-Sleep 2
         $process_id = (Get-Process wazuh-agent).id
     }
@@ -117,7 +117,7 @@ function check-installation {
         $actual_version = get-version
     }
     write-output "$(Get-Date -format u) - Starting Wazuh-Agent service." >> .\upgrade\upgrade.log
-    Start-Service -Name "Unishield"
+    Start-Service -Name "Unishield 360"
 }
 
 # Function to extract the version from the MSI using msiexec
@@ -179,7 +179,7 @@ function install {
     )
 
     kill -processname win32ui -ErrorAction SilentlyContinue -Force
-    Stop-Service -Name "Unishield"
+    Stop-Service -Name "Unishield 360"
     Remove-Item .\upgrade\upgrade_result -ErrorAction SilentlyContinue
     write-output "$(Get-Date -format u) - Starting upgrade process." >> .\upgrade\upgrade.log
 

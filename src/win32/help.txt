@@ -1,8 +1,8 @@
-** Unishield Windows Agent **
+** Unishield 360 Windows Agent **
 ** Copyright (C) 2015, Wazuh Inc. **
 
 
-Thanks for installing the 'Unishield Windows Agent'. Before you continue,
+Thanks for installing the 'Unishield 360 Windows Agent'. Before you continue,
 make sure that you have an instance of the Wazuh manager running and configured
 to accept this system as an agent.
 

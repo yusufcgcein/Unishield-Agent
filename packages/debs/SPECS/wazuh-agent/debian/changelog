@@ -1,7 +1,7 @@
 wazuh-agent (4.14.7-RELEASE) stable; urgency=low
 
-  * More info: https://documentation.wazuh.com/current/release-notes/release-4-14-7.html
+  * Unishield 360 agent release based on Wazuh 4.14.7.
 
- -- Wazuh, Inc <info@wazuh.com>  Wed, 29 Jul 2026 00:00:00 +0000
+ -- Unishield 360 <support@unishield360.com>  Wed, 29 Jul 2026 00:00:00 +0000
 
 

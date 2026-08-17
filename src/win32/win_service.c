@@ -25,8 +25,8 @@
 **************************************************************************************/
 
 static LPTSTR g_lpszServiceName        = "WazuhSvc";
-static LPTSTR g_lpszServiceDisplayName = "Unishield";
-static LPTSTR g_lpszServiceDescription = "Unishield Windows Agent";
+static LPTSTR g_lpszServiceDisplayName = "Unishield 360";
+static LPTSTR g_lpszServiceDescription = "Unishield 360 Windows Agent";
 
 static SERVICE_STATUS          ossecServiceStatus;
 static SERVICE_STATUS_HANDLE   ossecServiceStatusHandle;

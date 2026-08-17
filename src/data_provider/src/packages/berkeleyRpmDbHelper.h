@@ -275,20 +275,20 @@ class BerkeleyRpmDBReader final
         std::string getNext()
         {
             std::string retVal;
-            DBT key, data;
+            DBT dbtKey, dbtData;
             int cursorRet;
 
             if (m_firstIteration)
             {
-                if (cursorRet = m_dbWrapper->getRow(key, data), cursorRet == 0)
+                if (cursorRet = m_dbWrapper->getRow(dbtKey, dbtData), cursorRet == 0)
                 {
                     m_firstIteration = false;
                 }
             }
 
-            if (cursorRet = m_dbWrapper->getRow(key, data), cursorRet == 0)
+            if (cursorRet = m_dbWrapper->getRow(dbtKey, dbtData), cursorRet == 0)
             {
-                retVal = parseBody(parseHeader(data, TAG_PACKAGE_NAMES), data);
+                retVal = parseBody(parseHeader(dbtData, TAG_PACKAGE_NAMES), dbtData);
             }
 
             return retVal;
@@ -296,20 +296,20 @@ class BerkeleyRpmDBReader final
 
         bool getNextPythonFiles(std::vector<std::string>& pythonFiles)
         {
-            DBT key, data;
+            DBT dbtKey, dbtData;
             int cursorRet;
 
             if (m_firstIteration)
             {
-                if (cursorRet = m_dbWrapper->getRow(key, data), cursorRet == 0)
+                if (cursorRet = m_dbWrapper->getRow(dbtKey, dbtData), cursorRet == 0)
                 {
                     m_firstIteration = false;
                 }
             }
 
-            if (cursorRet = m_dbWrapper->getRow(key, data), cursorRet == 0)
+            if (cursorRet = m_dbWrapper->getRow(dbtKey, dbtData), cursorRet == 0)
             {
-                parsePythonFilesBody(parseHeader(data, TAG_FILE_NAMES), data, pythonFiles);
+                parsePythonFilesBody(parseHeader(dbtData, TAG_FILE_NAMES), dbtData, pythonFiles);
                 return true;
             }
 
