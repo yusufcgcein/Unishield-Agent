@@ -22,6 +22,36 @@ nano customer.conf          # edit: MANAGER_IP="your.manager.ip"
 
 That's it. The manager IP is **baked into the package** — your team never touches config files on servers.
 
+## Changing the manager IP (two ways)
+
+### A) At build time — one build per environment
+
+Pass the IP as a second argument — no need to edit `customer.conf`:
+
+```bash
+./build-agent.sh deb 203.0.113.10        # build for environment with IP 203.0.113.10
+./build-agent.sh rpm 198.51.100.5        # another environment
+./build-agent.sh deb 100.110.74.122      # etc.
+```
+
+This keeps `customer.conf` as the default, and lets you build any environment without editing files.
+
+### B) At runtime — change IP on an already-installed agent
+
+Point an installed agent at a different manager, without reinstalling:
+
+**Linux / macOS:**
+```bash
+sudo ./set-agent-ip.sh 203.0.113.10          # or with port: sudo ./set-agent-ip.sh 203.0.113.10 1514
+```
+
+**Windows (PowerShell as Administrator):**
+```powershell
+.\set-agent-ip.ps1 203.0.113.10
+```
+
+The script stops the agent, updates `ossec.conf`, restarts it, and it auto re-enrolls.
+
 ## How it works
 
 - `customer.conf` — one file, per customer: manager IP + version

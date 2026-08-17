@@ -3,14 +3,24 @@
 #  Unishield 360 Agent - One-command builder
 #
 #  Usage:
-#    1. Edit customer.conf  (set MANAGER_IP once)
-#    2. Run:  ./build-agent.sh [deb|rpm|win]
+#    ./build-agent.sh [deb|rpm|win] [MANAGER_IP]
+#
+#  Examples:
+#    ./build-agent.sh deb                     # uses IP from customer.conf
+#    ./build-agent.sh deb 203.0.113.10        # override IP for this build only
+#    ./build-agent.sh rpm 198.51.100.5        # build rpm for another environment
+#
 #  Output appears in ./build-output/
 # ============================================================
 set -e
 
 cd "$(dirname "$0")"
 source ./customer.conf
+
+# Optional: override MANAGER_IP from command line (2nd argument)
+if [ -n "$2" ]; then
+    MANAGER_IP="$2"
+fi
 
 OUTPUT_DIR="$(pwd)/build-output"
 mkdir -p "$OUTPUT_DIR"
