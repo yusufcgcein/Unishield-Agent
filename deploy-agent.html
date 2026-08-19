@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Deploy Agent Ã‚Â· Unishield 360</title>
+<title>Deploy Agent · Unishield 360</title>
 <style>
   :root {
     --bg: #10141a;
@@ -26,45 +26,35 @@
   .topbar .logo { display: flex; align-items: center; gap: 10px; font-size: 18px; font-weight: 600; }
   .topbar .logo .dot { width: 10px; height: 10px; border-radius: 50%; background: var(--brand); }
   .topbar .right { display: flex; gap: 16px; align-items: center; color: var(--text-muted); font-size: 13px; }
-  .topbar .right a { color: var(--text-muted); text-decoration: none; }
-  .topbar .right a:hover { color: var(--text); }
   .wrap { max-width: 960px; margin: 0 auto; padding: 28px 20px 60px; }
   h1 { font-size: 22px; font-weight: 600; margin-bottom: 4px; }
   .subtitle { color: var(--text-muted); font-size: 14px; margin-bottom: 24px; }
-
-  /* Step header */
   .step-head { display: flex; align-items: center; gap: 12px; margin: 28px 0 14px; }
   .step-badge { width: 28px; height: 28px; border-radius: 50%; background: var(--step-bg); display: flex; align-items: center; justify-content: center; font-size: 14px; font-weight: 600; color: var(--text); border: 1px solid var(--border); }
   .step-badge.active { background: var(--brand); border-color: var(--brand); }
-  .step-badge.done { background: var(--green); border-color: var(--green); }
   .step-title { font-size: 16px; font-weight: 600; }
   .step-desc { color: var(--text-muted); font-size: 13px; margin-top: 2px; }
-
-  /* OS grid */
-  .os-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(190px, 1fr)); gap: 12px; }
-  .os-card { background: var(--bg-card); border: 1px solid var(--border); border-radius: 10px; padding: 16px; cursor: pointer; transition: all .15s; position: relative; }
+  .os-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(200px, 1fr)); gap: 12px; }
+  .os-card { background: var(--bg-card); border: 1px solid var(--border); border-radius: 10px; padding: 16px; cursor: pointer; transition: all .15s; }
   .os-card:hover { background: var(--bg-card-hover); border-color: var(--brand); }
   .os-card.selected { background: var(--brand-bg); border-color: var(--brand); }
-  .os-card .os-icon { width: 44px; height: 44px; border-radius: 8px; background: var(--bg-card-hover); display: flex; align-items: center; justify-content: center; font-size: 22px; margin-bottom: 10px; }
+  .os-badge { display: inline-flex; align-items: center; justify-content: center; width: 44px; height: 44px; border-radius: 8px; font-weight: 700; font-size: 16px; margin-bottom: 10px; color: #fff; }
+  .os-badge.linux { background: #f7931e; }
+  .os-badge.debian { background: #c11f2f; }
+  .os-badge.windows { background: #2b579a; }
+  .os-badge.macos { background: #6e6e6e; }
   .os-card .os-name { font-size: 14px; font-weight: 600; }
   .os-card .os-arch { color: var(--text-muted); font-size: 12px; margin-top: 2px; }
   .os-card .os-file { color: var(--text-muted); font-size: 11px; margin-top: 6px; word-break: break-all; }
-
-  /* Form */
   .form-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; }
-  .field label { display: block; font-size: 13px; font-weight: 500; color: var(--text); margin-bottom: 6px; }
+  .field label { display: block; font-size: 13px; font-weight: 500; margin-bottom: 6px; }
   .field .hint { color: var(--text-muted); font-size: 12px; margin-bottom: 6px; }
   .field input { width: 100%; padding: 11px 12px; background: var(--bg-card); border: 1px solid var(--border); border-radius: 6px; color: var(--text); font-size: 14px; }
   .field input:focus { outline: 2px solid var(--brand); border-color: transparent; }
-  .field .note { display: flex; align-items: center; gap: 8px; color: var(--text-muted); font-size: 12px; margin-top: 8px; }
-
-  /* Group chips */
   .chips { display: flex; flex-wrap: wrap; gap: 8px; }
   .chip { padding: 7px 14px; background: var(--bg-card); border: 1px solid var(--border); border-radius: 20px; font-size: 13px; cursor: pointer; transition: all .15s; }
   .chip:hover { border-color: var(--brand); }
   .chip.selected { background: var(--brand-bg); border-color: var(--brand); color: var(--brand-light); }
-
-  /* Command */
   .cmd-box { background: var(--code-bg); border: 1px solid var(--border); border-radius: 10px; overflow: hidden; }
   .cmd-head { display: flex; align-items: center; justify-content: space-between; padding: 10px 16px; background: var(--bg-card); border-bottom: 1px solid var(--border); }
   .cmd-head .label { font-size: 12px; color: var(--text-muted); }
@@ -73,13 +63,9 @@
   .cmd-head .copy.copied { background: var(--green); }
   .cmd-body { padding: 16px; overflow-x: auto; }
   .cmd-body pre { font-family: "Cascadia Code", Consolas, "Courier New", monospace; font-size: 13px; line-height: 1.7; white-space: pre-wrap; word-break: break-all; color: #d6deeb; }
-
   .note-box { background: var(--brand-bg); border: 1px solid var(--border-active); border-radius: 8px; padding: 12px 16px; font-size: 13px; margin-top: 14px; color: #ffd9c4; }
-  .empty-note { color: var(--text-muted); font-size: 13px; margin-top: 14px; }
-
   .btn-download { display: inline-flex; align-items: center; gap: 8px; background: var(--brand); color: #fff; border: none; border-radius: 6px; padding: 10px 18px; font-size: 14px; font-weight: 600; cursor: pointer; text-decoration: none; margin-top: 16px; }
   .btn-download:hover { background: var(--brand-light); }
-
   @media (max-width: 640px) { .form-grid { grid-template-columns: 1fr; } }
 </style>
 </head>
@@ -87,41 +73,28 @@
 
 <div class="topbar">
   <div class="logo"><span class="dot"></span>Unishield 360</div>
-  <div class="right">
-    <a href="#">Agents</a>
-    <a href="#">Deploy</a>
-    <span>Ã¢â€”Â</span>
-  </div>
+  <div class="right"><span>Agents</span><span>Deploy</span></div>
 </div>
 
 <div class="wrap">
   <h1>Deploy new agent</h1>
   <div class="subtitle">Generate a command to download, install, and enroll an Unishield 360 agent on any system.</div>
 
-  <!-- STEP 1: OS + architecture -->
   <div class="step-head">
-    <div class="step-badge active" id="badge1">1</div>
-    <div>
-      <div class="step-title">Select the package to download and install</div>
-      <div class="step-desc">Choose your system and architecture.</div>
-    </div>
+    <div class="step-badge active">1</div>
+    <div><div class="step-title">Select the package to download and install</div><div class="step-desc">Choose your system and architecture.</div></div>
   </div>
   <div class="os-grid" id="osGrid"></div>
 
-  <!-- STEP 2: Server address + agent name -->
   <div class="step-head">
-    <div class="step-badge" id="badge2">2</div>
-    <div>
-      <div class="step-title">Configure the agent</div>
-      <div class="step-desc">Set the Unishield 360 server address the agent will report to.</div>
-    </div>
+    <div class="step-badge">2</div>
+    <div><div class="step-title">Configure the agent</div><div class="step-desc">Set the Unishield 360 server address the agent will report to.</div></div>
   </div>
   <div class="form-grid">
     <div class="field">
       <label>Server address</label>
-      <div class="hint">The address the agent uses to communicate with the server. IP address or FQDN.</div>
+      <div class="hint">The address the agent uses to communicate with the server. IP or FQDN.</div>
       <input type="text" id="serverIp" placeholder="e.g. 100.110.74.122" value="100.110.74.122">
-      <div class="note"><input type="checkbox" id="rememberIp" checked> Remember server address</div>
     </div>
     <div class="field">
       <label>Agent name (optional)</label>
@@ -130,13 +103,9 @@
     </div>
   </div>
 
-  <!-- STEP 3: Groups -->
   <div class="step-head">
-    <div class="step-badge" id="badge3">3</div>
-    <div>
-      <div class="step-title">Select one or more existing groups</div>
-      <div class="step-desc">Assign the agent to a configuration group (optional).</div>
-    </div>
+    <div class="step-badge">3</div>
+    <div><div class="step-title">Select one or more existing groups</div><div class="step-desc">Assign the agent to a configuration group (optional).</div></div>
   </div>
   <div class="chips" id="groupChips">
     <div class="chip selected" data-group="default">Default</div>
@@ -144,19 +113,12 @@
     <div class="chip" data-group="windows-pcs">windows-pcs</div>
   </div>
 
-  <!-- STEP 4: Command -->
   <div class="step-head">
-    <div class="step-badge" id="badge4">4</div>
-    <div>
-      <div class="step-title">Run the following command to download and install the agent</div>
-      <div class="step-desc">You will need administrator privileges. Copy and run in a terminal on the target system.</div>
-    </div>
+    <div class="step-badge">4</div>
+    <div><div class="step-title">Run the following command to download and install the agent</div><div class="step-desc">You will need administrator privileges. Copy and run in a terminal on the target system.</div></div>
   </div>
   <div class="cmd-box">
-    <div class="cmd-head">
-      <span class="label">Bash / PowerShell</span>
-      <button class="copy" id="copyBtn">Copy</button>
-    </div>
+    <div class="cmd-head"><span class="label">Bash / PowerShell</span><button class="copy" id="copyBtn">Copy</button></div>
     <div class="cmd-body"><pre id="cmdOut"></pre></div>
   </div>
 
@@ -165,39 +127,30 @@
 </div>
 
 <script>
-/* ============================================================
-   CONFIGURATION Ã¢â‚¬â€ edit for your deployment
-   ============================================================ */
 var DOWNLOAD_BASE = "https://100.110.74.122:8443/downloads";
 
-/* OS options: os name, arch, download filename, install type, shell, icon */
 var PACKAGES = [
-  { id: "rpm-amd64",    os: "Linux Ã‚Â· RPM",    arch: "amd64 / x86_64",        file: "unishield-agent-4.14.7-1.x86_64.rpm",   install: "rpm",  shell: "bash", icon: "Ã°Å¸ÂÂ§" },
-  { id: "rpm-aarch64",  os: "Linux Ã‚Â· RPM",    arch: "aarch64 / arm64",        file: "unishield-agent-4.14.7-1.aarch64.rpm", install: "rpm",  shell: "bash", icon: "Ã°Å¸ÂÂ§" },
-  { id: "deb-amd64",    os: "Ubuntu / Debian", arch: "amd64",                 file: "unishield-agent_4.14.7-1_amd64.deb",    install: "deb",  shell: "bash", icon: "Ã°Å¸Å¸Â " },
-  { id: "deb-aarch64",  os: "Ubuntu / Debian", arch: "arm64 / aarch64",       file: "unishield-agent_4.14.7-1_arm64.deb",    install: "deb",  shell: "bash", icon: "Ã°Å¸Å¸Â " },
-  { id: "msi",          os: "Windows",        arch: "32/64-bit",              file: "unishield-agent-4.14.7-1.msi",          install: "msi",  shell: "powershell", icon: "Ã°Å¸ÂªÅ¸" },
-  { id: "macos-intel",  os: "macOS",          arch: "Intel",                  file: "unishield-agent-4.14.7-1.intel64.pkg", install: "pkg", shell: "bash", icon: "Ã°Å¸ÂÅ½" },
-  { id: "macos-arm",    os: "macOS",          arch: "Apple silicon",          file: "unishield-agent-4.14.7-1.arm64.pkg",   install: "pkg", shell: "bash", icon: "Ã°Å¸ÂÅ½" }
+  { id: "rpm-amd64",    os: "Linux RPM",    cls: "linux",   badge: "R",  arch: "amd64 / x86_64",        file: "unishield-agent-4.14.7-1.x86_64.rpm",   install: "rpm", shell: "bash" },
+  { id: "rpm-aarch64",  os: "Linux RPM",    cls: "linux",   badge: "R",  arch: "aarch64 / arm64",        file: "unishield-agent-4.14.7-1.aarch64.rpm", install: "rpm", shell: "bash" },
+  { id: "deb-amd64",    os: "Ubuntu / Debian", cls: "debian", badge: "D", arch: "amd64",                 file: "unishield-agent_4.14.7-1_amd64.deb",    install: "deb", shell: "bash" },
+  { id: "deb-aarch64",  os: "Ubuntu / Debian", cls: "debian", badge: "D", arch: "arm64 / aarch64",       file: "unishield-agent_4.14.7-1_arm64.deb",    install: "deb", shell: "bash" },
+  { id: "msi",          os: "Windows",       cls: "windows", badge: "W", arch: "32/64-bit",              file: "unishield-agent-4.14.7-1.msi",          install: "msi", shell: "powershell" },
+  { id: "macos-intel",  os: "macOS",         cls: "macos",   badge: "A", arch: "Intel",                  file: "unishield-agent-4.14.7-1.intel64.pkg", install: "pkg", shell: "bash" },
+  { id: "macos-arm",    os: "macOS",         cls: "macos",   badge: "A", arch: "Apple silicon",          file: "unishield-agent-4.14.7-1.arm64.pkg",   install: "pkg", shell: "bash" }
 ];
-
-/* ============================================================
-   END CONFIGURATION
-   ============================================================ */
 
 var selectedId = "deb-amd64";
 var selectedGroups = { "default": true };
 
 function getPkg() { return PACKAGES.find(function(p){ return p.id === selectedId; }); }
 
-/* Render OS cards */
 (function renderOs() {
   var grid = document.getElementById("osGrid");
   PACKAGES.forEach(function(p) {
     var div = document.createElement("div");
     div.className = "os-card" + (p.id === selectedId ? " selected" : "");
     div.innerHTML =
-      '<div class="os-icon">' + p.icon + '</div>' +
+      '<div class="os-badge ' + p.cls + '">' + p.badge + '</div>' +
       '<div class="os-name">' + p.os + '</div>' +
       '<div class="os-arch">' + p.arch + '</div>' +
       '<div class="os-file">' + p.file + '</div>';
@@ -206,7 +159,6 @@ function getPkg() { return PACKAGES.find(function(p){ return p.id === selectedId
   });
 })();
 
-/* Groups */
 document.querySelectorAll(".chip").forEach(function(chip){
   chip.onclick = function(){
     var g = chip.dataset.group;
@@ -217,7 +169,6 @@ document.querySelectorAll(".chip").forEach(function(chip){
   };
 });
 
-/* Build the command */
 function buildCommand() {
   var p = getPkg();
   var ip = document.getElementById("serverIp").value.trim();
@@ -227,47 +178,27 @@ function buildCommand() {
   var env = " WAZUH_MANAGER='" + ip + "'";
   if (name) env += " WAZUH_AGENT_NAME='" + name + "'";
   if (groups.length) env += " WAZUH_AGENT_GROUP='" + groups.join(",") + "'";
-  var cmd = "";
-
-  if (p.install === "rpm") {
-    cmd = "curl -k -o " + p.file + " " + url + " && sudo" + env + " rpm -ihv " + p.file;
-  } else if (p.install === "deb") {
-    cmd = "curl -k -o " + p.file + " " + url + " && sudo" + env + " dpkg -i " + p.file;
-  } else if (p.install === "msi") {
-    cmd = "$env:WAZUH_MANAGER='" + ip + "'" + (name ? "; $env:WAZUH_AGENT_NAME='" + name + "'" : "") +
-      (groups.length ? "; $env:WAZUH_AGENT_GROUP='" + groups.join(",") + "'" : "") +
-      "\nInvoke-WebRequest -Uri '" + url + "' -OutFile .\\" + p.file + "\nmsiexec.exe /i " + p.file + " /qn";
-  } else if (p.install === "pkg") {
-    cmd = "curl -k -o " + p.file + " " + url + " && sudo" + env + " installer -pkg " + p.file + " -target /";
-  }
-  return cmd;
+  if (p.install === "rpm") return "curl -k -o " + p.file + " " + url + " && sudo" + env + " rpm -ihv " + p.file;
+  if (p.install === "deb") return "curl -k -o " + p.file + " " + url + " && sudo" + env + " dpkg -i " + p.file;
+  if (p.install === "msi") return "Invoke-WebRequest -Uri '" + url + "' -OutFile .\\" + p.file + "\nmsiexec.exe /i " + p.file + " /qn WAZUH_MANAGER='" + ip + "'" + (name ? " WAZUH_AGENT_NAME='" + name + "'" : "") + (groups.length ? " WAZUH_AGENT_GROUP='" + groups.join(",") + "'" : "");
+  if (p.install === "pkg") return "curl -k -o " + p.file + " " + url + " && sudo" + env + " installer -pkg " + p.file + " -target /";
+  return "";
 }
 
 function renderAll() {
-  // update OS selection
-  document.querySelectorAll(".os-card").forEach(function(el, i){
-    el.classList.toggle("selected", PACKAGES[i].id === selectedId);
-  });
-  // command
+  document.querySelectorAll(".os-card").forEach(function(el, i){ el.classList.toggle("selected", PACKAGES[i].id === selectedId); });
   var cmd = buildCommand();
   document.getElementById("cmdOut").textContent = cmd;
-  // note
   var ip = document.getElementById("serverIp").value.trim();
   var nb = document.getElementById("noteBox");
-  if (!ip) {
-    nb.className = "note-box";
-    nb.textContent = "Enter a server address to generate the install command.";
-    return;
-  }
+  if (!ip) { nb.textContent = "Enter a server address to generate the install command."; return; }
   var p = getPkg();
   var msg = "The agent will download from " + DOWNLOAD_BASE + " and auto-enroll to " + ip + " (no authentication key needed).";
   var an = document.getElementById("agentName").value.trim();
   if (an) msg += " Agent name: " + an + ".";
   var grp = Object.keys(selectedGroups);
   if (grp.length) msg += " Groups: " + grp.join(", ") + ".";
-  nb.className = "note-box";
   nb.textContent = msg;
-  // download button
   document.getElementById("downloadBtn").href = DOWNLOAD_BASE + "/" + p.file;
 }
 
@@ -277,16 +208,11 @@ document.getElementById("agentName").addEventListener("input", renderAll);
 document.getElementById("copyBtn").onclick = function(){
   var text = document.getElementById("cmdOut").textContent;
   (navigator.clipboard ? navigator.clipboard.writeText(text) : Promise.reject()).then(function(){
-    var b = document.getElementById("copyBtn");
-    b.textContent = "Copied!";
-    b.classList.add("copied");
-    setTimeout(function(){ b.textContent = "Copy"; b.classList.remove("copied"); }, 1500);
-  }).catch(function(){
-    // fallback
-    var ta = document.createElement("textarea"); ta.value = text; document.body.appendChild(ta); ta.select();
-    document.execCommand("copy"); document.body.removeChild(ta);
     var b = document.getElementById("copyBtn"); b.textContent = "Copied!"; b.classList.add("copied");
     setTimeout(function(){ b.textContent = "Copy"; b.classList.remove("copied"); }, 1500);
+  }).catch(function(){
+    var ta = document.createElement("textarea"); ta.value = text; document.body.appendChild(ta); ta.select();
+    document.execCommand("copy"); document.body.removeChild(ta);
   });
 };
 
