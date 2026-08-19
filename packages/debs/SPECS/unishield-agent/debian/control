@@ -1,4 +1,4 @@
-Source: wazuh-agent
+Source: unishield-agent
 Section: admin
 Priority: extra
 Maintainer: Unishield 360 <support@unishield360.com>
@@ -6,7 +6,7 @@ Build-Depends: debhelper (>= 7.0.50~), make, gcc, linux-libc-dev, gawk, libaudit
 Standards-Version: 3.8.4
 Homepage: https://www.unishield360.com
 
-Package: wazuh-agent
+Package: unishield-agent
 Architecture: any
 Depends: ${shlibs:Depends}, libc6 (>= 2.7), lsb-release, debconf, adduser, procps
 Conflicts: ossec-hids-agent, wazuh-manager, ossec-hids, wazuh-api
@@ -17,11 +17,11 @@ Description: Unishield 360 agent
  the following capabilities: log analysis, file integrity monitoring,
  intrusions detection and policy and compliance monitoring.
 
-Package: wazuh-agent-dbg
+Package: unishield-agent-dbg
 Section: debug
 Priority: optional
 Architecture: any
-Conflicts: wazuh-agent (<< ${binary:Version}), wazuh-agent (>> ${binary:Version})
-Depends: wazuh-agent
-Description: Debug symbols for wazuh-agent.
+Conflicts: unishield-agent (<< ${binary:Version}), unishield-agent (>> ${binary:Version})
+Depends: unishield-agent
+Description: Debug symbols for unishield-agent.
   This package contains files necessary for debugging the wazuh-agent with gdb.

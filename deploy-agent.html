@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Deploy Agent · Unishield 360</title>
+<title>Deploy Agent Ã‚Â· Unishield 360</title>
 <style>
   :root {
     --bg: #10141a;
@@ -90,7 +90,7 @@
   <div class="right">
     <a href="#">Agents</a>
     <a href="#">Deploy</a>
-    <span>●</span>
+    <span>Ã¢â€”Â</span>
   </div>
 </div>
 
@@ -166,19 +166,19 @@
 
 <script>
 /* ============================================================
-   CONFIGURATION — edit for your deployment
+   CONFIGURATION Ã¢â‚¬â€ edit for your deployment
    ============================================================ */
 var DOWNLOAD_BASE = "https://100.110.74.122:8443/downloads";
 
 /* OS options: os name, arch, download filename, install type, shell, icon */
 var PACKAGES = [
-  { id: "rpm-amd64",    os: "Linux · RPM",    arch: "amd64 / x86_64",        file: "wazuh-agent-4.14.7-1.x86_64.rpm",   install: "rpm",  shell: "bash", icon: "🐧" },
-  { id: "rpm-aarch64",  os: "Linux · RPM",    arch: "aarch64 / arm64",        file: "wazuh-agent-4.14.7-1.aarch64.rpm", install: "rpm",  shell: "bash", icon: "🐧" },
-  { id: "deb-amd64",    os: "Ubuntu / Debian", arch: "amd64",                 file: "wazuh-agent_4.14.7-1_amd64.deb",    install: "deb",  shell: "bash", icon: "🟠" },
-  { id: "deb-aarch64",  os: "Ubuntu / Debian", arch: "arm64 / aarch64",       file: "wazuh-agent_4.14.7-1_arm64.deb",    install: "deb",  shell: "bash", icon: "🟠" },
-  { id: "msi",          os: "Windows",        arch: "32/64-bit",              file: "wazuh-agent-4.14.7-1.msi",          install: "msi",  shell: "powershell", icon: "🪟" },
-  { id: "macos-intel",  os: "macOS",          arch: "Intel",                  file: "unishield-agent-4.14.7-1.intel64.pkg", install: "pkg", shell: "bash", icon: "🍎" },
-  { id: "macos-arm",    os: "macOS",          arch: "Apple silicon",          file: "unishield-agent-4.14.7-1.arm64.pkg",   install: "pkg", shell: "bash", icon: "🍎" }
+  { id: "rpm-amd64",    os: "Linux Ã‚Â· RPM",    arch: "amd64 / x86_64",        file: "unishield-agent-4.14.7-1.x86_64.rpm",   install: "rpm",  shell: "bash", icon: "Ã°Å¸ÂÂ§" },
+  { id: "rpm-aarch64",  os: "Linux Ã‚Â· RPM",    arch: "aarch64 / arm64",        file: "unishield-agent-4.14.7-1.aarch64.rpm", install: "rpm",  shell: "bash", icon: "Ã°Å¸ÂÂ§" },
+  { id: "deb-amd64",    os: "Ubuntu / Debian", arch: "amd64",                 file: "unishield-agent_4.14.7-1_amd64.deb",    install: "deb",  shell: "bash", icon: "Ã°Å¸Å¸Â " },
+  { id: "deb-aarch64",  os: "Ubuntu / Debian", arch: "arm64 / aarch64",       file: "unishield-agent_4.14.7-1_arm64.deb",    install: "deb",  shell: "bash", icon: "Ã°Å¸Å¸Â " },
+  { id: "msi",          os: "Windows",        arch: "32/64-bit",              file: "unishield-agent-4.14.7-1.msi",          install: "msi",  shell: "powershell", icon: "Ã°Å¸ÂªÅ¸" },
+  { id: "macos-intel",  os: "macOS",          arch: "Intel",                  file: "unishield-agent-4.14.7-1.intel64.pkg", install: "pkg", shell: "bash", icon: "Ã°Å¸ÂÅ½" },
+  { id: "macos-arm",    os: "macOS",          arch: "Apple silicon",          file: "unishield-agent-4.14.7-1.arm64.pkg",   install: "pkg", shell: "bash", icon: "Ã°Å¸ÂÅ½" }
 ];
 
 /* ============================================================

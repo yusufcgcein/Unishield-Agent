@@ -1,4 +1,4 @@
-wazuh-agent (4.14.7-RELEASE) stable; urgency=low
+unishield-agent (4.14.7-RELEASE) stable; urgency=low
 
   * Unishield 360 agent release based on Wazuh 4.14.7.
 

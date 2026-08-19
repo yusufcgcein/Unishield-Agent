@@ -42,7 +42,7 @@ fi
 build_deb() {
     echo "[1/3] Preparing debian packaging..."
     rm -rf debian
-    cp -r packages/debs/SPECS/wazuh-agent/debian ./debian
+    cp -r packages/debs/SPECS/unishield-agent/debian ./debian
     sed -i "s/4.14.7-RELEASE/${VERSION}-${REVISION}/" debian/changelog
 
     # Bake manager IP into package build (install.sh writes it into ossec.conf)
@@ -57,7 +57,7 @@ build_deb() {
     debuild --rootcmd=sudo -b -uc -us 2>&1 | tail -5
 
     # debuild writes output one level above the build dir (repo parent)
-    for deb in ../wazuh-agent_*.deb ./wazuh-agent_*.deb "$(dirname "$PWD")"/wazuh-agent_*.deb; do
+    for deb in ../unishield-agent_*.deb ./unishield-agent_*.deb "$(dirname "$PWD")"/unishield-agent_*.deb; do
         [ -f "$deb" ] && cp "$deb" "$OUTPUT_DIR/" && echo "  copied: $deb"
     done
     rm -rf debian gen_permissions.sh
