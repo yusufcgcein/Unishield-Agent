@@ -1,0 +1,223 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Deploy Agent - Unishield 360</title>
+<style>
+  :root {
+    --brand: #f26722;
+    --brand-dark: #d45514;
+    --bg: #f5f6f8;
+    --card: #ffffff;
+    --border: #e0e3e8;
+    --text: #1c2430;
+    --muted: #6b7280;
+    --code-bg: #0f172a;
+    --code-text: #e2e8f0;
+    --green: #16a34a;
+  }
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body { font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif; background: var(--bg); color: var(--text); }
+  header { background: var(--card); border-bottom: 1px solid var(--border); padding: 16px 32px; display: flex; align-items: center; gap: 12px; }
+  header img { height: 36px; }
+  header h1 { font-size: 20px; font-weight: 600; }
+  header .sub { color: var(--muted); font-size: 13px; margin-left: 8px; }
+  .container { max-width: 860px; margin: 32px auto; padding: 0 16px; }
+  .card { background: var(--card); border: 1px solid var(--border); border-radius: 10px; padding: 24px; margin-bottom: 20px; }
+  .card h2 { font-size: 17px; font-weight: 600; margin-bottom: 4px; }
+  .card .desc { color: var(--muted); font-size: 13px; margin-bottom: 16px; }
+  .step { display: flex; gap: 12px; margin-bottom: 16px; }
+  .step-num { background: var(--brand); color: #fff; width: 26px; height: 26px; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 14px; font-weight: 600; flex-shrink: 0; margin-top: 2px; }
+  .step-body { flex: 1; }
+  .step-body h3 { font-size: 15px; font-weight: 600; margin-bottom: 8px; }
+  label { display: block; font-size: 13px; font-weight: 500; margin-bottom: 6px; color: var(--text); }
+  select, input[type=text] {
+    width: 100%; padding: 10px 12px; border: 1px solid var(--border); border-radius: 6px; font-size: 14px; background: #fff; color: var(--text);
+  }
+  select:focus, input:focus { outline: 2px solid var(--brand); border-color: transparent; }
+  .grid2 { display: grid; grid-template-columns: 1fr 1fr; gap: 14px; }
+  .pkg-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(200px, 1fr)); gap: 10px; }
+  .pkg-opt { border: 2px solid var(--border); border-radius: 8px; padding: 12px; cursor: pointer; transition: all .15s; }
+  .pkg-opt:hover { border-color: var(--brand); }
+  .pkg-opt.selected { border-color: var(--brand); background: #fff7f0; }
+  .pkg-opt .os { font-weight: 600; font-size: 14px; }
+  .pkg-opt .arch { color: var(--muted); font-size: 12px; margin-top: 2px; }
+  .command-box { background: var(--code-bg); border-radius: 8px; padding: 16px; position: relative; }
+  .command-box pre { color: var(--code-text); font-family: "Cascadia Code", Consolas, monospace; font-size: 13px; white-space: pre-wrap; word-break: break-all; line-height: 1.6; }
+  .copy-btn { position: absolute; top: 10px; right: 10px; background: #334155; color: #fff; border: none; border-radius: 5px; padding: 6px 12px; font-size: 12px; cursor: pointer; }
+  .copy-btn:hover { background: #475569; }
+  .copy-btn.copied { background: var(--green); }
+  .note { background: #fff7f0; border: 1px solid #fde3cd; border-radius: 8px; padding: 12px 16px; font-size: 13px; color: #7c3a00; margin-top: 12px; }
+  .inline { display: inline-flex; align-items: center; gap: 6px; color: var(--muted); font-size: 12px; }
+  .hidden { display: none; }
+  @media (max-width: 640px) { .grid2 { grid-template-columns: 1fr; } }
+</style>
+</head>
+<body>
+
+<header>
+  <h1>Unishield 360</h1>
+  <span class="sub">Deploy Agent</span>
+</header>
+
+<div class="container">
+
+  <!-- STEP 1: Package selection -->
+  <div class="card">
+    <div class="step">
+      <div class="step-num">1</div>
+      <div class="step-body">
+        <h3>Select the package to download and install on your system:</h3>
+        <div class="pkg-grid" id="pkgGrid"></div>
+      </div>
+    </div>
+  </div>
+
+  <!-- STEP 2: Server address -->
+  <div class="card">
+    <div class="step">
+      <div class="step-num">2</div>
+      <div class="step-body">
+        <h3>Server address</h3>
+        <p class="desc">This is the address the agent uses to communicate with the Unishield 360 server. Enter an IP address or a fully qualified domain name (FQDN).</p>
+        <div class="grid2">
+          <div>
+            <label for="serverAddress">Assign a server address</label>
+            <input type="text" id="serverAddress" placeholder="e.g. 192.168.1.77" value="">
+          </div>
+          <div>
+            <label for="agentName">Agent name (optional)</label>
+            <input type="text" id="agentName" placeholder="Leave blank to use hostname">
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- STEP 3: Generated command -->
+  <div class="card">
+    <div class="step">
+      <div class="step-num">3</div>
+      <div class="step-body">
+        <h3>Run the following command to download and install the agent</h3>
+        <p class="desc">You will need administrator privileges to perform this installation. Copy and run the command below in a terminal on the target machine.</p>
+        <div class="command-box">
+          <button class="copy-btn" id="copyBtn">Copy</button>
+          <pre id="commandOut"></pre>
+        </div>
+        <div class="note" id="noteBox"></div>
+      </div>
+    </div>
+  </div>
+
+</div>
+
+<script>
+/* ============================================================
+   CONFIGURATION - EDIT THESE FOR YOUR DEPLOYMENT
+   ============================================================ */
+
+// Where your built packages are hosted (your download server)
+var DOWNLOAD_BASE = "https://downloads.unishield360.com";
+
+// Package files. Filenames must match what your build produces.
+// Build them with: ./build-agent.sh deb <IP>  /  ./build-agent.sh rpm <IP>  etc.
+var PACKAGES = [
+  { id: "rpm-amd64",      os: "RPM",        arch: "amd64",    file: "wazuh-agent-4.14.7-1.x86_64.rpm",    shell: "bash", install: "rpm" },
+  { id: "rpm-aarch64",    os: "RPM",        arch: "aarch64",  file: "wazuh-agent-4.14.7-1.aarch64.rpm",  shell: "bash", install: "rpm" },
+  { id: "deb-amd64",      os: "DEB",        arch: "amd64",    file: "wazuh-agent_4.14.7-1_amd64.deb",     shell: "bash", install: "deb" },
+  { id: "deb-aarch64",    os: "DEB",        arch: "aarch64",  file: "wazuh-agent_4.14.7-1_arm64.deb",     shell: "bash", install: "deb" },
+  { id: "msi",            os: "MSI",        arch: "32/64-bit",file: "wazuh-agent-4.14.7-1.msi",           shell: "powershell", install: "msi" },
+  { id: "macos-intel",    os: "macOS",      arch: "Intel",    file: "unishield-agent-4.14.7-1.intel64.pkg", shell: "bash", install: "pkg" },
+  { id: "macos-arm",      os: "macOS",      arch: "Apple silicon", file: "unishield-agent-4.14.7-1.arm64.pkg", shell: "bash", install: "pkg" }
+];
+
+/* Default server address (first-run) */
+var DEFAULT_SERVER = "192.168.1.77";
+
+/* ============================================================
+   END CONFIGURATION
+   ============================================================ */
+
+var selectedPkg = "rpm-amd64";
+var pkgGrid = document.getElementById("pkgGrid");
+var commandOut = document.getElementById("commandOut");
+var noteBox = document.getElementById("noteBox");
+var copyBtn = document.getElementById("copyBtn");
+
+// Render package options
+PACKAGES.forEach(function(p) {
+  var div = document.createElement("div");
+  div.className = "pkg-opt" + (p.id === selectedPkg ? " selected" : "");
+  div.dataset.id = p.id;
+  div.innerHTML = '<div class="os">' + p.os + '</div><div class="arch">' + p.arch + '</div>';
+  div.onclick = function() {
+    document.querySelectorAll(".pkg-opt").forEach(function(el) { el.classList.remove("selected"); });
+    div.classList.add("selected");
+    selectedPkg = p.id;
+    renderCommand();
+  };
+  pkgGrid.appendChild(div);
+});
+
+document.getElementById("serverAddress").value = DEFAULT_SERVER;
+
+// Generate the command for the selected package + server
+function getCommand() {
+  var p = PACKAGES.find(function(x) { return x.id === selectedPkg; });
+  var ip = document.getElementById("serverAddress").value.trim() || DEFAULT_SERVER;
+  var name = document.getElementById("agentName").value.trim();
+  var url = DOWNLOAD_BASE + "/" + p.file;
+  var extra = name ? " WAZUH_AGENT_NAME='" + name + "'" : "";
+  var lines = [];
+
+  if (p.install === "rpm") {
+    lines.push("curl -o " + p.file + " " + url + " && sudo WAZUH_MANAGER='" + ip + "'" + extra + " rpm -ihv " + p.file);
+  } else if (p.install === "deb") {
+    lines.push("curl -o " + p.file + " " + url + " && sudo WAZUH_MANAGER='" + ip + "'" + extra + " dpkg -i " + p.file);
+  } else if (p.install === "msi") {
+    lines.push("Invoke-WebRequest -Uri '" + url + "' -OutFile .\\" + p.file);
+    lines.push("msiexec.exe /i " + p.file + " /qn WAZUH_MANAGER='" + ip + "'" + extra);
+  } else if (p.install === "pkg") {
+    lines.push("curl -o " + p.file + " " + url + " && sudo WAZUH_MANAGER='" + ip + "'" + extra + " installer -pkg " + p.file + " -target /");
+  }
+  return { pkg: p, ip: ip, name: name, text: lines.join("\n") };
+}
+
+function renderCommand() {
+  var r = getCommand();
+  commandOut.textContent = r.text;
+  copyBtn.textContent = "Copy";
+  copyBtn.classList.remove("copied");
+
+  if (!r.ip) {
+    noteBox.className = "note";
+    noteBox.textContent = "Enter a server address to generate the install command.";
+    return;
+  }
+  var hint = "The agent will auto-enroll to " + r.ip + " (no authentication key needed).";
+  if (r.name) hint += " Agent name: " + r.name + ".";
+  noteBox.className = "note";
+  noteBox.textContent = hint;
+}
+
+// Copy to clipboard
+copyBtn.onclick = function() {
+  var text = commandOut.textContent;
+  navigator.clipboard.writeText(text).then(function() {
+    copyBtn.textContent = "Copied!";
+    copyBtn.classList.add("copied");
+    setTimeout(function() { copyBtn.textContent = "Copy"; copyBtn.classList.remove("copied"); }, 1500);
+  });
+};
+
+document.getElementById("serverAddress").addEventListener("input", renderCommand);
+document.getElementById("agentName").addEventListener("input", renderCommand);
+
+// Initial render
+renderCommand();
+</script>
+
+</body>
+</html>
