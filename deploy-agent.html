@@ -119,7 +119,7 @@
    ============================================================ */
 
 // Where your built packages are hosted (your download server)
-var DOWNLOAD_BASE = "https://downloads.unishield360.com";
+var DOWNLOAD_BASE = "https://100.110.74.122:8443/downloads";
 
 // Package files. Filenames must match what your build produces.
 // Build them with: ./build-agent.sh deb <IP>  /  ./build-agent.sh rpm <IP>  etc.
@@ -173,14 +173,14 @@ function getCommand() {
   var lines = [];
 
   if (p.install === "rpm") {
-    lines.push("curl -o " + p.file + " " + url + " && sudo WAZUH_MANAGER='" + ip + "'" + extra + " rpm -ihv " + p.file);
+    lines.push("curl -k -o " + p.file + " " + url + " && sudo WAZUH_MANAGER='" + ip + "'" + extra + " rpm -ihv " + p.file);
   } else if (p.install === "deb") {
-    lines.push("curl -o " + p.file + " " + url + " && sudo WAZUH_MANAGER='" + ip + "'" + extra + " dpkg -i " + p.file);
+    lines.push("curl -k -o " + p.file + " " + url + " && sudo WAZUH_MANAGER='" + ip + "'" + extra + " dpkg -i " + p.file);
   } else if (p.install === "msi") {
-    lines.push("Invoke-WebRequest -Uri '" + url + "' -OutFile .\\" + p.file);
+    lines.push("[Net.ServicePointManager]::ServerCertificateValidationCallback = {$true}; Invoke-WebRequest -Uri '" + url + "' -OutFile .\\" + p.file);
     lines.push("msiexec.exe /i " + p.file + " /qn WAZUH_MANAGER='" + ip + "'" + extra);
   } else if (p.install === "pkg") {
-    lines.push("curl -o " + p.file + " " + url + " && sudo WAZUH_MANAGER='" + ip + "'" + extra + " installer -pkg " + p.file + " -target /");
+    lines.push("curl -k -o " + p.file + " " + url + " && sudo WAZUH_MANAGER='" + ip + "'" + extra + " installer -pkg " + p.file + " -target /");
   }
   return { pkg: p, ip: ip, name: name, text: lines.join("\n") };
 }
