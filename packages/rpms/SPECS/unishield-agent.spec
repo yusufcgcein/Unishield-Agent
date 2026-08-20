@@ -2,14 +2,14 @@
 %global debug_package %{nil}
 %endif
 
-%if %{_isstage} == no
+%if %{_isstage} == "no"
   %define _rpmfilename %%{NAME}_%%{VERSION}-%%{RELEASE}_%%{ARCH}_%{_hashcommit}.rpm
 %else
   %define _rpmfilename %%{NAME}-%%{VERSION}-%%{RELEASE}.%%{ARCH}.rpm
 %endif
 
 Summary:     Unishield 360 helps you to gain security visibility into your infrastructure by monitoring hosts at an operating system and application level. It provides the following capabilities: log analysis, file integrity monitoring, intrusions detection and policy and compliance monitoring
-Name:        wazuh-agent
+Name:        unishield-agent
 Version:     %{_version}
 Release:     %{_release}
 License:     GPL
@@ -41,10 +41,10 @@ log analysis, file integrity monitoring, intrusions detection and policy and com
 %if 0%{?el} >= 6 || 0%{?rhel} >= 6
 # Build debuginfo package
 %ifnarch ppc64le
-%package -n wazuh-agent-debuginfo
-Requires: wazuh-agent = %{_version}-%{_release}
+%package -n unishield-agent-debuginfo
+Requires: unishield-agent = %{_version}-%{_release}
 Summary: Debug information for package %{name}.
-%description -n wazuh-agent-debuginfo
+%description -n unishield-agent-debuginfo
 This package provides debug information for package %{name}.
 %endif
 %endif
@@ -53,6 +53,7 @@ This package provides debug information for package %{name}.
 %setup -q
 
 ./gen_ossec.sh conf agent centos %rhel %{_localstatedir} > etc/ossec-agent.conf
+mkdir -p src/external
 
 %build
 pushd src
@@ -92,7 +93,8 @@ echo 'USER_ENABLE_CISCAT="y"' >> ./etc/preloaded-vars.conf
 echo 'USER_UPDATE="n"' >> ./etc/preloaded-vars.conf
 echo 'USER_AGENT_SERVER_IP="MANAGER_IP"' >> ./etc/preloaded-vars.conf
 echo 'USER_CA_STORE="/path/to/my_cert.pem"' >> ./etc/preloaded-vars.conf
-echo 'USER_AUTO_START="n"' >> ./etc/preloaded-vars.conf
+
+echo 'USER_BINARYINSTALL="y"' >> ./etc/preloaded-vars.conf
 ./install.sh || { echo "install.sh failed! Aborting." >&2; exit 1; }
 
 %if 0%{?el} < 6 || 0%{?rhel} < 6
@@ -802,7 +804,7 @@ rm -fr %{buildroot}
 
 %if 0%{?el} >= 6 || 0%{?rhel} >= 6
 %ifnarch ppc64le
-%files -n wazuh-agent-debuginfo -f debugfiles.list
+%files -n unishield-agent-debuginfo -f debugfiles.list
 %endif
 %endif
 
