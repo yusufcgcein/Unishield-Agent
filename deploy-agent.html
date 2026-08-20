@@ -127,16 +127,22 @@
 </div>
 
 <script>
-var DOWNLOAD_BASE = "https://100.110.74.122:8443/downloads";
+// My packages are hosted on my server; the rest use Wazuh's official packages.
+var MY_BASE   = "https://100.110.74.122:8443/downloads";            // Unishield 360 (built from our source)
+var WAZUH_BASE = "https://packages.wazuh.com/4.x";                  // Official Wazuh prebuilt packages
 
 var PACKAGES = [
-  { id: "rpm-amd64",    os: "Linux RPM",    cls: "linux",   badge: "R",  arch: "amd64 / x86_64",        file: "unishield-agent-4.14.7-1.x86_64.rpm",   install: "rpm", shell: "bash" },
-  { id: "rpm-aarch64",  os: "Linux RPM",    cls: "linux",   badge: "R",  arch: "aarch64 / arm64",        file: "unishield-agent-4.14.7-1.aarch64.rpm", install: "rpm", shell: "bash" },
-  { id: "deb-amd64",    os: "Ubuntu / Debian", cls: "debian", badge: "D", arch: "amd64",                 file: "unishield-agent_4.14.7-1_amd64.deb",    install: "deb", shell: "bash" },
-  { id: "deb-aarch64",  os: "Ubuntu / Debian", cls: "debian", badge: "D", arch: "arm64 / aarch64",       file: "unishield-agent_4.14.7-1_arm64.deb",    install: "deb", shell: "bash" },
-  { id: "msi",          os: "Windows",       cls: "windows", badge: "W", arch: "32/64-bit",              file: "unishield-agent-4.14.7-1.msi",          install: "msi", shell: "powershell" },
-  { id: "macos-intel",  os: "macOS",         cls: "macos",   badge: "A", arch: "Intel",                  file: "unishield-agent-4.14.7-1.intel64.pkg", install: "pkg", shell: "bash" },
-  { id: "macos-arm",    os: "macOS",         cls: "macos",   badge: "A", arch: "Apple silicon",          file: "unishield-agent-4.14.7-1.arm64.pkg",   install: "pkg", shell: "bash" }
+  // CentOS / RHEL / Fedora / Amazon Linux (RPM)
+  { id: "rpm-amd64",    os: "Linux RPM",    cls: "linux",   badge: "R",  arch: "amd64 / x86_64",   base: MY_BASE,    file: "unishield-agent-4.14.7-1.x86_64.rpm",   install: "rpm", shell: "bash" },
+  { id: "rpm-aarch64",  os: "Linux RPM",    cls: "linux",   badge: "R",  arch: "aarch64 / arm64",   base: WAZUH_BASE, file: "yum/wazuh-agent-4.14.7-1.aarch64.rpm", install: "rpm", shell: "bash" },
+  // Ubuntu / Debian (DEB)
+  { id: "deb-amd64",    os: "Ubuntu / Debian", cls: "debian", badge: "D", arch: "amd64",            base: MY_BASE,    file: "unishield-agent_4.14.7-1_amd64.deb", install: "deb", shell: "bash" },
+  { id: "deb-aarch64",  os: "Ubuntu / Debian", cls: "debian", badge: "D", arch: "arm64 / aarch64",   base: WAZUH_BASE, file: "apt/pool/main/w/wazuh-agent/wazuh-agent_4.14.7-1_arm64.deb", install: "deb", shell: "bash" },
+  // Windows
+  { id: "msi",          os: "Windows",       cls: "windows", badge: "W", arch: "32/64-bit",          base: WAZUH_BASE, file: "windows/wazuh-agent-4.14.7-1.msi",   install: "msi", shell: "powershell" },
+  // macOS
+  { id: "macos-intel",  os: "macOS",         cls: "macos",   badge: "A", arch: "Intel",              base: WAZUH_BASE, file: "macos/wazuh-agent-4.14.7-1.intel64.pkg", install: "pkg", shell: "bash" },
+  { id: "macos-arm",    os: "macOS",         cls: "macos",   badge: "A", arch: "Apple silicon",      base: WAZUH_BASE, file: "macos/wazuh-agent-4.14.7-1.arm64.pkg",   install: "pkg", shell: "bash" }
 ];
 
 var selectedId = "deb-amd64";
@@ -174,14 +180,16 @@ function buildCommand() {
   var ip = document.getElementById("serverIp").value.trim();
   var name = document.getElementById("agentName").value.trim();
   var groups = Object.keys(selectedGroups);
-  var url = DOWNLOAD_BASE + "/" + p.file;
+  var url = p.base + "/" + p.file;
+  // My server uses a self-signed cert -> needs -k; Wazuh official uses valid TLS.
+  var curlFlag = (p.base === MY_BASE) ? " -k" : "";
   var env = " WAZUH_MANAGER='" + ip + "'";
   if (name) env += " WAZUH_AGENT_NAME='" + name + "'";
   if (groups.length) env += " WAZUH_AGENT_GROUP='" + groups.join(",") + "'";
-  if (p.install === "rpm") return "curl -k -o " + p.file + " " + url + " && sudo" + env + " rpm -ihv " + p.file;
-  if (p.install === "deb") return "curl -k -o " + p.file + " " + url + " && sudo" + env + " dpkg -i " + p.file;
+  if (p.install === "rpm") return "curl" + curlFlag + " -o " + p.file + " " + url + " && sudo" + env + " rpm -ihv " + p.file;
+  if (p.install === "deb") return "curl" + curlFlag + " -o " + p.file + " " + url + " && sudo" + env + " dpkg -i " + p.file;
   if (p.install === "msi") return "Invoke-WebRequest -Uri '" + url + "' -OutFile .\\" + p.file + "\nmsiexec.exe /i " + p.file + " /qn WAZUH_MANAGER='" + ip + "'" + (name ? " WAZUH_AGENT_NAME='" + name + "'" : "") + (groups.length ? " WAZUH_AGENT_GROUP='" + groups.join(",") + "'" : "");
-  if (p.install === "pkg") return "curl -k -o " + p.file + " " + url + " && sudo" + env + " installer -pkg " + p.file + " -target /";
+  if (p.install === "pkg") return "curl" + curlFlag + " -o " + p.file + " " + url + " && sudo" + env + " installer -pkg " + p.file + " -target /";
   return "";
 }
 
@@ -193,13 +201,15 @@ function renderAll() {
   var nb = document.getElementById("noteBox");
   if (!ip) { nb.textContent = "Enter a server address to generate the install command."; return; }
   var p = getPkg();
-  var msg = "The agent will download from " + DOWNLOAD_BASE + " and auto-enroll to " + ip + " (no authentication key needed).";
+  var msg = "The agent will auto-enroll to " + ip + " (no authentication key needed).";
+  if (p.base === MY_BASE) msg += " Package from Unishield 360 server.";
+  else msg += " Package from Wazuh official repository (prebuilt).";
   var an = document.getElementById("agentName").value.trim();
   if (an) msg += " Agent name: " + an + ".";
   var grp = Object.keys(selectedGroups);
   if (grp.length) msg += " Groups: " + grp.join(", ") + ".";
   nb.textContent = msg;
-  document.getElementById("downloadBtn").href = DOWNLOAD_BASE + "/" + p.file;
+  document.getElementById("downloadBtn").href = p.base + "/" + p.file;
 }
 
 document.getElementById("serverIp").addEventListener("input", renderAll);
