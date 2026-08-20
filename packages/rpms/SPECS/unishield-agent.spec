@@ -802,6 +802,19 @@ rm -fr %{buildroot}
 %dir %attr(750, root, wazuh) %{_localstatedir}/wodles/gcloud
 %attr(750, root, wazuh) %{_localstatedir}/wodles/gcloud/*
 
+%ghost %{_localstatedir}/queue/fim/db/fim.db
+%ghost %{_localstatedir}/queue/fim/db/fim.db-journal
+%ghost %{_localstatedir}/queue/logcollector/file_status.json
+%ghost %{_localstatedir}/queue/sockets/.wait
+%ghost %{_localstatedir}/queue/syscollector/db/local.db
+%ghost %{_localstatedir}/queue/syscollector/db/local.db-journal
+%ghost %{_localstatedir}/var/run/wazuh-agentd.state
+%ghost %{_localstatedir}/var/run/wazuh-agentd-*.pid
+%ghost %{_localstatedir}/var/run/wazuh-execd-*.pid
+%ghost %{_localstatedir}/var/run/wazuh-logcollector-*.pid
+%ghost %{_localstatedir}/var/run/wazuh-modulesd-*.pid
+%ghost %{_localstatedir}/var/run/wazuh-syscheckd-*.pid
+
 %if 0%{?el} >= 6 || 0%{?rhel} >= 6
 %ifnarch ppc64le
 %files -n unishield-agent-debuginfo -f debugfiles.list
