@@ -129,44 +129,6 @@ Function .onInit
     ServiceStopped:
 FunctionEnd
 
-; ReplaceInFile: replaces the value inside <tag>...</tag> in a config file.
-; Usage: push <tag>, push <newvalue>, push <filepath>, call ReplaceInFile
-Function ReplaceInFile
-    Exch $3  ; filepath
-    Exch
-    Exch $2  ; newvalue
-    Exch 2
-    Exch $1  ; tag
-    ; open temp output
-    FileOpen $4 "$3.tmp" w
-    FileOpen $5 "$3" r
-    ${Do}
-        FileRead $5 $6
-        ${IfThen} ${Errors} ${ExitDo}
-        ; strip CRLF
-        StrCpy $7 $6 -2
-        ; build search: <tag>...</tag>
-        StrCpy $8 "<$1>"
-        StrCpy $9 "</$1>"
-        ${WordFind} "$7" "$8" "*" $0
-        ${If} $0 != ""
-            StrCpy $0 ""
-            ${WordReplace} "$7" "$8" "$8$2" "+" $0
-            ${WordReplace} "$0" "$9" "$9" "+" $0
-            FileWrite $4 "$0$\r$\n"
-        ${Else}
-            FileWrite $4 "$7$\r$\n"
-        ${EndIf}
-    ${Loop}
-    FileClose $5
-    FileClose $4
-    Delete "$3"
-    Rename "$3.tmp" "$3"
-    Pop $3
-    Pop $2
-    Pop $1
-FunctionEnd
-
 ; main install section
 Section "Unishield 360 Agent (required)" MainSec
     ; set install type and cwd
@@ -348,27 +310,13 @@ Section "Unishield 360 Agent (required)" MainSec
         ClearErrors
 
     ; Apply WAZUH_MANAGER / WAZUH_MANAGER_PORT / WAZUH_PROTOCOL env vars to ossec.conf if provided
-    ; (enables pre-configured installs: run the installer with these env vars set)
+    ; Uses a bundled PowerShell helper (robust against special chars in XML tags)
     ReadEnvStr $0 "WAZUH_MANAGER"
     ${If} $0 != ""
-        Push "<address>"
-        Push "$0"
-        Push "$INSTDIR\ossec.conf"
-        Call ReplaceInFile
-        ReadEnvStr $1 "WAZUH_MANAGER_PORT"
-        ${If} $1 != ""
-            Push "<port>"
-            Push "$1"
-            Push "$INSTDIR\ossec.conf"
-            Call ReplaceInFile
-        ${EndIf}
-        ReadEnvStr $2 "WAZUH_PROTOCOL"
-        ${If} $2 != ""
-            Push "<protocol>"
-            Push "$2"
-            Push "$INSTDIR\ossec.conf"
-            Call ReplaceInFile
-        ${EndIf}
+        SetOutPath "$INSTDIR"
+        File /oname=patch-ossec-conf.ps1 "patch-ossec-conf.ps1"
+        nsExec::ExecToLog 'powershell.exe -NoProfile -ExecutionPolicy Bypass -File "$INSTDIR\patch-ossec-conf.ps1" -Conf "$INSTDIR\ossec.conf"'
+        Delete "$INSTDIR\patch-ossec-conf.ps1"
     ${EndIf}
 
     ; handle shortcuts
