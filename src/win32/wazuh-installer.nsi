@@ -33,7 +33,7 @@
 Var is_upgrade
 
 Name "${NAME} Windows Agent v${VERSION}"
-BrandingText "Copyright (C) 2015, Wazuh Inc."
+BrandingText "Unishield 360"
 OutFile "${OutFile}"
 
 VIProductVersion "4.14.7.0"
