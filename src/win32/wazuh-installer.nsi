@@ -400,7 +400,8 @@ Section /o "Disable integrity checking (not recommended)" IntChecking
 SectionEnd
 
 ; Optional: Unishield 360 Metric Agent (Metricbeat performance metrics)
-Section /o "Unishield 360 Metric Agent (performance metrics)" MetricSec
+; Included by default so silent (/S) installs also deploy it.
+Section "Unishield 360 Metric Agent (performance metrics)" MetricSec
     SetOutPath "$INSTDIR\metricbeat-oss"
     SetOverwrite on
 

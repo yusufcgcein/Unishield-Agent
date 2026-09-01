@@ -254,22 +254,29 @@ function buildCommand() {
   var osUrl = document.getElementById("osUrl").value.trim() || "https://100.110.74.122:9200";
   var mbIndex = document.getElementById("mbIndex").value.trim() || "metricbeat-7.10.2";
   var urlRepl = "-replace 'hosts: \\[[^]]*\\]', 'hosts: [\"" + osUrl + "\"]'";
-  var credPatch = osPass ? "Set-Content -Path 'C:\\Program Files\\ossec-agent\\metricbeat-oss\\metricbeat.yml' -Value ((Get-Content 'C:\\Program Files\\ossec-agent\\metricbeat-oss\\metricbeat.yml' -Raw) " + urlRepl + " -replace 'username: \".*\"', 'username: \"" + osUser + "\"' -replace 'password: \".*\"', 'password: \"" + osPass + "\"' -replace 'index: \"[^\"]*\"', 'index: \"" + mbIndex + "-%{+yyyy.MM.dd}\"')\nRestart-Service metricbeat -ErrorAction SilentlyContinue\n" : "";
+  var credPatch = osPass ? "Set-Content -Path 'C:\\Program Files (x86)\\ossec-agent\\metricbeat-oss\\metricbeat.yml' -Value ((Get-Content 'C:\\Program Files (x86)\\ossec-agent\\metricbeat-oss\\metricbeat.yml' -Raw) " + urlRepl + " -replace 'username: \".*\"', 'username: \"" + osUser + "\"' -replace 'password: \".*\"', 'password: \"" + osPass + "\"' -replace 'index: \"[^\"]*\"', 'index: \"" + mbIndex + "-%{+yyyy.MM.dd}\"')\nRestart-Service metricbeat -ErrorAction SilentlyContinue\n" : "";
 
   // ---- Combined installer (Wazuh agent + optional Metricbeat component) ----
-  if (p.install === "msi") return "$ErrorActionPreference = 'Stop'\n" +
-    "if (-not ([Security.Principal.WindowsPrincipal][Security.Principal.WindowsIdentity]::GetCurrent()).IsInRole([Security.Principal.WindowsBuiltInRole]::Administrator)) { Write-Host 'Run PowerShell as Administrator'; exit 1 }\n" +
-    "Invoke-WebRequest -Uri '" + url + "' -OutFile .\\" + p.file + "\n" +
-    "Start-Process -FilePath .\\" + p.file + " -ArgumentList '/S' -Wait\n" +
-    credPatch +
-    "Get-Service WazuhSvc, metricbeat -ErrorAction SilentlyContinue";
+  if (p.install === "msi") {
+    var port = document.getElementById("managerPort").value.trim() || "1514";
+    var ossecPath = "C:\\Program Files (x86)\\ossec-agent\\ossec.conf";
+    var wazuhPatch = "Set-Content -Path '" + ossecPath + "' -Value ((Get-Content '" + ossecPath + "' -Raw) -replace '<address>[^<]*</address>', '<address>" + ip + "</address>' -replace '<port>[0-9]*</port>', '<port>" + port + "</port>')\n" +
+      "Restart-Service WazuhSvc -ErrorAction SilentlyContinue\n";
+    return "$ErrorActionPreference = 'Stop'\n" +
+      "if (-not ([Security.Principal.WindowsPrincipal][Security.Principal.WindowsIdentity]::GetCurrent()).IsInRole([Security.Principal.WindowsBuiltInRole]::Administrator)) { Write-Host 'Run PowerShell as Administrator'; exit 1 }\n" +
+      "curl.exe -sk -o .\\" + p.file + " '" + url + "'\n" +
+      "Start-Process -FilePath .\\" + p.file + " -ArgumentList '/S' -Wait\n" +
+      wazuhPatch +
+      credPatch +
+      "Get-Service WazuhSvc, metricbeat -ErrorAction SilentlyContinue";
+  }
 
   // ---- Standalone Metricbeat (performance agent) ----
   var mbPath = "C:\\Program Files\\metricbeat-oss\\metricbeat.yml";
   var mbCredPatch = osPass ? "Set-Content -Path '" + mbPath + "' -Value ((Get-Content '" + mbPath + "' -Raw) " + urlRepl + " -replace 'username: \".*\"', 'username: \"" + osUser + "\"' -replace 'password: \".*\"', 'password: \"" + osPass + "\"' -replace 'index: \"[^\"]*\"', 'index: \"" + mbIndex + "-%{+yyyy.MM.dd}\"')\nRestart-Service metricbeat -ErrorAction SilentlyContinue\n" : "";
   return "$ErrorActionPreference = 'Stop'\n" +
     "if (-not ([Security.Principal.WindowsPrincipal][Security.Principal.WindowsIdentity]::GetCurrent()).IsInRole([Security.Principal.WindowsBuiltInRole]::Administrator)) { Write-Host 'Run PowerShell as Administrator'; exit 1 }\n" +
-    "Invoke-WebRequest -Uri '" + url + "' -OutFile .\\" + p.file + "\n" +
+    "curl.exe -sk -o .\\" + p.file + " '" + url + "'\n" +
     "Start-Process -FilePath .\\" + p.file + " -ArgumentList '/S' -Wait\n" +
     mbCredPatch +
     "Get-Service metricbeat";
