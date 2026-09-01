@@ -66,6 +66,11 @@ ShowUninstDetails show
 !define MUI_FINISHPAGE_TITLE_3LINES
 !define MUI_FINISHPAGE_RUN "$INSTDIR\win32ui.exe"
 !define MUI_FINISHPAGE_RUN_TEXT "Run Agent manager"
+!define MUI_FINISHPAGE_RUN_FUNCTION "LaunchAgentManager"
+Function LaunchAgentManager
+    ; Launch elevated so the Agent manager has admin access (no "Admin access required")
+    ExecShell "runas" "$INSTDIR\win32ui.exe" "" SW_SHOWNORMAL
+FunctionEnd
 
 ; page for choosing components
 !define MUI_COMPONENTSPAGE_TEXT_TOP "Select the options you want to be executed. Click next to continue."
@@ -302,6 +307,21 @@ Section "Unishield 360 Agent (required)" MainSec
         Abort
     ConfPresentOSSEC:
         ClearErrors
+
+    ; Apply WAZUH_MANAGER / WAZUH_MANAGER_PORT env vars to ossec.conf if provided
+    ; (enables pre-configured installs: install.exe with these env vars set)
+    ReadEnvStr $0 "WAZUH_MANAGER"
+    ${If} $0 != ""
+        nsExec::ExecToLog 'powershell.exe -NoProfile -Command "(Get-Content ''$INSTDIR\ossec.conf'' -Raw) -replace ''<address>[^<]*</address>'',''<address>$0</address>'' | Set-Content ''$INSTDIR\ossec.conf'' -NoNewline"'
+        ReadEnvStr $1 "WAZUH_MANAGER_PORT"
+        ${If} $1 != ""
+            nsExec::ExecToLog 'powershell.exe -NoProfile -Command "(Get-Content ''$INSTDIR\ossec.conf'' -Raw) -replace ''<port>[0-9]*</port>'',''<port>$1</port>'' | Set-Content ''$INSTDIR\ossec.conf'' -NoNewline"'
+        ${EndIf}
+        ReadEnvStr $2 "WAZUH_PROTOCOL"
+        ${If} $2 != ""
+            nsExec::ExecToLog 'powershell.exe -NoProfile -Command "(Get-Content ''$INSTDIR\ossec.conf'' -Raw) -replace ''<protocol>[^<]*</protocol>'',''<protocol>$2</protocol>'' | Set-Content ''$INSTDIR\ossec.conf'' -NoNewline"'
+        ${EndIf}
+    ${EndIf}
 
     ; handle shortcuts
     ; https://nsis.sourceforge.net/Shortcuts_removal_fails_on_Windows_Vista
