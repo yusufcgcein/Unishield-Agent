@@ -375,7 +375,9 @@ Section "Unishield 360 Agent (required)" MainSec
     ${If} $is_upgrade == "yes"
         Goto StartService
     ${Else}
-        Goto SetupComplete
+        ; Fresh install: also start the service so the agent is fully
+        ; operational right after install (no manual start needed).
+        Goto StartService
     ${EndIf}
 
     StartService:
