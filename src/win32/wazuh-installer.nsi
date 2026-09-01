@@ -399,6 +399,35 @@ Section /o "Disable integrity checking (not recommended)" IntChecking
     nsExec::ExecToLog '"$INSTDIR\setup-syscheck.exe" "$INSTDIR" "disable"'
 SectionEnd
 
+; Optional: Unishield 360 Metric Agent (Metricbeat performance metrics)
+Section /o "Unishield 360 Metric Agent (performance metrics)" MetricSec
+    SetOutPath "$INSTDIR\metricbeat-oss"
+    SetOverwrite on
+
+    File "metricbeat-oss\metricbeat.exe"
+    File "metricbeat-oss\metricbeat.yml"
+    File "metricbeat-oss\install-service-metricbeat.ps1"
+    File "metricbeat-oss\uninstall-service-metricbeat.ps1"
+    File "metricbeat-oss\uninstall-agent.ps1"
+    File "metricbeat-oss\register-arp.ps1"
+    File "metricbeat-oss\unishield.ico"
+    SetOutPath "$INSTDIR\metricbeat-oss\modules.d"
+    File "metricbeat-oss\modules.d\windows.yml"
+
+    ; register in Add/Remove Programs
+    WriteRegStr HKLM "Software\Microsoft\Windows\CurrentVersion\Uninstall\Unishield 360 Metric Agent" "DisplayName" "Unishield 360 Metric Agent"
+    WriteRegStr HKLM "Software\Microsoft\Windows\CurrentVersion\Uninstall\Unishield 360 Metric Agent" "DisplayVersion" "7.10.2"
+    WriteRegStr HKLM "Software\Microsoft\Windows\CurrentVersion\Uninstall\Unishield 360 Metric Agent" "Publisher" "Unishield 360"
+    WriteRegStr HKLM "Software\Microsoft\Windows\CurrentVersion\Uninstall\Unishield 360 Metric Agent" "DisplayIcon" "$INSTDIR\metricbeat-oss\unishield.ico"
+    WriteRegStr HKLM "Software\Microsoft\Windows\CurrentVersion\Uninstall\Unishield 360 Metric Agent" "UninstallString" '"$INSTDIR\metricbeat-oss\uninstall-agent.exe"'
+    WriteRegDWORD HKLM "Software\Microsoft\Windows\CurrentVersion\Uninstall\Unishield 360 Metric Agent" "NoModify" 1
+    WriteRegDWORD HKLM "Software\Microsoft\Windows\CurrentVersion\Uninstall\Unishield 360 Metric Agent" "NoRepair" 1
+
+    ; install + start the metricbeat service
+    nsExec::ExecToLog 'powershell.exe -ExecutionPolicy Bypass -File "$INSTDIR\metricbeat-oss\install-service-metricbeat.ps1"'
+    nsExec::ExecToLog 'sc start "metricbeat"'
+SectionEnd
+
 ; uninstall section
 Section "Uninstall"
     ; uninstall the services
@@ -418,6 +447,11 @@ Section "Uninstall"
             Abort
         ${EndIf}
     ServiceUninstallComplete:
+
+    ; remove metricbeat service (if the Metric Agent component was installed)
+    nsExec::ExecToLog 'powershell.exe -ExecutionPolicy Bypass -File "$INSTDIR\metricbeat-oss\uninstall-service-metricbeat.ps1"'
+    DeleteRegKey HKLM "Software\Microsoft\Windows\CurrentVersion\Uninstall\Unishield 360 Metric Agent"
+    RMDir /r "$INSTDIR\metricbeat-oss"
 
     ; make sure manage_agents.exe is not running
     ManageAgents:

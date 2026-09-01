@@ -1,0 +1,48 @@
+﻿###################### UNISHIELD 360 - PRE-CONFIGURED METRICBEAT ######################
+#
+# This Metricbeat is pre-configured for Unishield 360 / Wazuh deployments.
+# Edit the two values marked <<CUSTOMER>> per customer, then build/package.
+# Nothing else needs to change on the target machine.
+
+# ======================= Modules =======================
+metricbeat.config.modules:
+  path: ${path.config}/modules.d/*.yml
+  reload.enabled: false
+
+# ======================= General =======================
+# Beat name shown in the dashboard. If unset, Metricbeat uses the machine's
+# own hostname (recommended for customer deployments).
+# name: "u360-windows-host"
+tags: ["windows", "performance"]
+
+# ======================= TEMPLATE SETTINGS =======================
+setup.template.name: "metricbeat"
+setup.template.pattern: "metricbeat-*"
+setup.template.enabled: false
+setup.ilm.enabled: false
+
+# ======================= Output =======================
+# <<CUSTOMER>> Point hosts at the customer's Wazuh indexer (9200) and set creds.
+# Verified against the Unishield 360 indexer (OpenSearch 7.10.2) on 100.110.74.122.
+output.elasticsearch:
+  hosts: ["https://100.110.74.122:9200"]
+  protocol: "https"
+  ssl.verification_mode: "none"
+  username: "admin"
+  password: "bqUxnAP*Mw2b+qLaI2ansmKNlCqoCHs7"
+  allow_older_versions: true
+  index: "metricbeat-7.10.2-%{+yyyy.MM.dd}"
+
+# ======================= Processors =======================
+processors:
+  - add_host_metadata: ~
+
+# ======================= Logging =======================
+logging.level: info
+logging.to_files: true
+logging.files:
+  path: C:/ProgramData/metricbeat/logs
+  name: metricbeat
+  keepfiles: 7
+  permissions: 0644
+

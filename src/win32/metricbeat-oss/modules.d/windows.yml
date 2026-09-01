@@ -1,0 +1,51 @@
+# UNISHIELD 360 - Windows performance module (pre-configured)
+# Collects CPU, memory and disk perf counters + service status.
+
+- module: windows
+  metricsets:
+    - perfmon
+    - service
+  enabled: true
+  period: 10s
+  perfmon.ignore_non_existent_counters: false
+  perfmon.queries:
+    - object: 'Processor Information'
+      instance: ["_Total"]
+      counters:
+        - name: '% Processor Time'
+          field: cpu_usage
+          format: "float"
+        - name: '% User Time'
+          field: cpu_user
+          format: "float"
+        - name: '% Privileged Time'
+          field: cpu_privileged
+          format: "float"
+
+    - object: 'Memory'
+      counters:
+        - name: 'Available MBytes'
+          field: memory_available_mb
+          format: "float"
+        - name: '% Committed Bytes In Use'
+          field: memory_committed_pct
+          format: "float"
+
+    - object: 'PhysicalDisk'
+      instance: ["_Total"]
+      counters:
+        - name: '% Disk Time'
+          field: disk_time_pct
+          format: "float"
+        - name: 'Current Disk Queue Length'
+          field: disk_queue_length
+          format: "float"
+        - name: 'Avg. Disk Queue Length'
+          field: disk_avg_queue_length
+          format: "float"
+
+- module: windows
+  metricsets:
+    - service
+  enabled: true
+  period: 60s

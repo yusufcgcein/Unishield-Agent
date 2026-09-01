@@ -807,6 +807,12 @@ winagent: external win32/libwinpthread-1.dll win32/libwinpthreadpatched.a ${WAZU
 	cd win32/ && ./unix2dos.pl ../../LICENSE > LICENSE.txt
 	cd win32/ && ./unix2dos.pl ../../VERSION.json > VERSION.json
 	cd win32/ && makensis wazuh-installer.nsi
+	@if [ -n "$${UNISHIELD_CERT_FILE:-}" ]; then \
+		echo "  [winagent] Signing Windows binaries..."; \
+		../sign-windows-agent.sh src/win32/; \
+	else \
+		echo "  [winagent] UNISHIELD_CERT_FILE not set - skipping code signing."; \
+	fi
 
 win32/shared_modules: $(WAZUHEXT_LIB)
 	cd ${DBSYNC} && mkdir -p build && cd build && cmake ${CMAKE_OPTS} ${DBSYNC_TEST} ${SHARED_MODULES_RELEASE_TYPE} ${WIN_RESOURCE_OBJ} .. && ${MAKE}

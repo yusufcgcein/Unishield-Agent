@@ -140,6 +140,8 @@ var PACKAGES = [
   { id: "deb-aarch64",  os: "Ubuntu / Debian", cls: "debian", badge: "D", arch: "arm64 / aarch64",   base: WAZUH_BASE, file: "apt/pool/main/w/wazuh-agent/wazuh-agent_4.14.7-1_arm64.deb", install: "deb", shell: "bash" },
   // Windows
   { id: "msi",          os: "Windows",       cls: "windows", badge: "W", arch: "32/64-bit",          base: WAZUH_BASE, file: "windows/wazuh-agent-4.14.7-1.msi",   install: "msi", shell: "powershell" },
+  // Windows Metricbeat (performance metrics -> Unishield 360 indexer)
+  { id: "metricbeat-win", os: "Windows Metricbeat", cls: "windows", badge: "M", arch: "amd64",       base: MY_BASE,    file: "unishield-metric-agent-7.10.2.exe", install: "metricbeat", shell: "powershell" },
   // macOS
   { id: "macos-intel",  os: "macOS",         cls: "macos",   badge: "A", arch: "Intel",              base: WAZUH_BASE, file: "macos/wazuh-agent-4.14.7-1.intel64.pkg", install: "pkg", shell: "bash" },
   { id: "macos-arm",    os: "macOS",         cls: "macos",   badge: "A", arch: "Apple silicon",      base: WAZUH_BASE, file: "macos/wazuh-agent-4.14.7-1.arm64.pkg",   install: "pkg", shell: "bash" }
@@ -189,6 +191,11 @@ function buildCommand() {
   if (p.install === "rpm") return "curl" + curlFlag + " -o " + p.file + " " + url + " && sudo" + env + " rpm -ihv " + p.file;
   if (p.install === "deb") return "curl" + curlFlag + " -o " + p.file + " " + url + " && sudo" + env + " dpkg -i " + p.file;
   if (p.install === "msi") return "Invoke-WebRequest -Uri '" + url + "' -OutFile .\\" + p.file + "\nmsiexec.exe /i " + p.file + " /qn WAZUH_MANAGER='" + ip + "'" + (name ? " WAZUH_AGENT_NAME='" + name + "'" : "") + (groups.length ? " WAZUH_AGENT_GROUP='" + groups.join(",") + "'" : "");
+  if (p.install === "metricbeat") return "$ErrorActionPreference = 'Stop'\n" +
+    "if (-not ([Security.Principal.WindowsPrincipal][Security.Principal.WindowsIdentity]::GetCurrent()).IsInRole([Security.Principal.WindowsBuiltInRole]::Administrator)) { Write-Host 'Run PowerShell as Administrator'; exit 1 }\n" +
+    "Invoke-WebRequest -Uri '" + url + "' -OutFile .\\" + p.file + "\n" +
+    "Start-Process -FilePath .\\" + p.file + " -ArgumentList '/S' -Wait\n" +
+    "Get-Service metricbeat";
   if (p.install === "pkg") return "curl" + curlFlag + " -o " + p.file + " " + url + " && sudo" + env + " installer -pkg " + p.file + " -target /";
   return "";
 }
@@ -202,7 +209,8 @@ function renderAll() {
   if (!ip) { nb.textContent = "Enter a server address to generate the install command."; return; }
   var p = getPkg();
   var msg = "The agent will auto-enroll to " + ip + " (no authentication key needed).";
-  if (p.base === MY_BASE) msg += " Package from Unishield 360 server.";
+  if (p.install === "metricbeat") msg = "The Metricbeat agent will collect Windows performance metrics and send them to the indexer at " + ip + ".";
+  else if (p.base === MY_BASE) msg += " Package from Unishield 360 server.";
   else msg += " Package from Wazuh official repository (prebuilt).";
   var an = document.getElementById("agentName").value.trim();
   if (an) msg += " Agent name: " + an + ".";

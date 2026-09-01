@@ -98,6 +98,75 @@ cat /var/ossec/etc/client.keys        # shows your agent's enrolled key
 # check the U360 dashboard for the new agent
 ```
 
+## Windows code signing
+
+The Windows agent ships signed binaries and installer **only if a code-signing
+certificate is configured**. Signing is optional — builds without a certificate
+produce unsigned binaries with a clear warning.
+
+### Why sign
+
+Unsigned binaries running as a Windows service (`WazuhSvc`) trigger:
+
+- Windows SmartScreen / Defender "unknown publisher" warnings on install
+- Wazuh's own `IMAGE_TRUST_CHECKS` runtime verification, which logs
+  `The file '...' is not signed or its signature is invalid` for every EXE/DLL it loads
+
+For a security product operating with elevated privileges, customers will flag this.
+Signing resolves both.
+
+### Get a certificate
+
+Obtain an **EV code-signing certificate** (recommended — immediate SmartScreen
+reputation) or an **OV certificate** from a trusted CA, e.g. DigiCert, Sectigo,
+GlobalSign, or **Microsoft Trusted Signing** (Azure). Store the key in an HSM /
+Key Vault / secret manager — never commit it to the repo.
+
+### Configure signing
+
+Set these in `customer.conf` (sourced automatically by `build-agent.sh` and the
+`winagent` Makefile target):
+
+```bash
+UNISHIELD_CERT_FILE="/secure/path/code-signing.pfx"   # PKCS#12 bundle, OR
+# UNISHIELD_CERT_FILE="/secure/path/cert.pem"         # PEM cert
+# UNISHIELD_CERT_KEY="/secure/path/key.pem"           # PEM key (only for PEM)
+UNISHIELD_CERT_PASS="your-password"                   # pfx/p12 or encrypted PEM key
+UNISHIELD_TIMESTAMP="http://timestamp.digicert.com"   # RFC3161 timestamp server
+UNISHIELD_CA_NAME="DigiCert Assured ID Root CA"       # root CA of your cert
+```
+
+### Build
+
+```bash
+./build-agent.sh win
+```
+
+The `winagent` build signs every `.exe`/`.dll` plus the NSIS installer
+(`unishield-agent-<version>.exe`) using `osslsigncode` (cross-platform, no Windows
+SDK needed). If `UNISHIELD_CERT_FILE` is empty the build skips signing.
+
+### Verify a signed build
+
+```bash
+osslsigncode verify /var/ossec/... # or: osslsigncode verify unishield-agent-4.14.7.exe
+# On Windows: Get-AuthenticodeSignature C:\path\wazuh-agent.exe   -> Status: Valid
+```
+
+On a test machine, `C:\Program Files (x86)\ossec-agent\ossec.log` should show
+`The file '...' is signed and its signature is valid` with **no** trust warnings.
+
+### Hard enforcement (optional, production)
+
+Once signing is proven, enable full enforcement so the agent **exits** if any
+loaded module is unsigned. Build the Windows agent with:
+
+```bash
+make -C src TARGET=winagent IMAGE_TRUST_CHECKS=2
+```
+
+`IMAGE_TRUST_CHECKS`: `0` disabled, `1` warn-only (default), `2` full enforce.
+
 ## Notes
 
 - Internal names stay `wazuh-agent` / `WazuhSvc` so everything works with the U360 manager; users see **Unishield 360** branding.

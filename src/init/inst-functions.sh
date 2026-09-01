@@ -462,6 +462,12 @@ WriteAgent()
     echo "  </active-response>" >> $NEWCONFIG
     echo "" >> $NEWCONFIG
 
+    # Active response command definitions
+    if [ "X$ACTIVERESPONSE" = "Xyes" ]; then
+        cat ${AR_COMMANDS_TEMPLATE} >> $NEWCONFIG
+        echo "" >> $NEWCONFIG
+    fi
+
     # Logging format
     cat ${LOGGING_TEMPLATE} >> $NEWCONFIG
     echo "" >> $NEWCONFIG

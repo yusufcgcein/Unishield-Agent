@@ -71,8 +71,22 @@ build_rpm() {
 }
 
 build_win() {
-    echo "Windows build requires cross toolchain (mingw + nsis)."
-    echo "cd src && make TARGET=winagent -j2"
+    echo "[1/3] Building Windows agent (mingw + nsis)..."
+    make -C src deps TARGET=winagent 2>&1 | tail -2
+    make -C src TARGET=winagent -j2 2>&1 | tail -5
+
+    echo "[2/3] Collecting Windows artifacts..."
+    mkdir -p "$OUTPUT_DIR"
+    # Copy the built binaries and installer to the output directory
+    find src/win32 -maxdepth 1 \( -name '*.exe' -o -name '*.dll' -o -name '*.sys' \) -exec cp -f {} "$OUTPUT_DIR/" \; 2>/dev/null || true
+
+    echo "[3/3] Copying installer..."
+    for exe in src/win32/unishield-agent-*.exe src/win32/wazuh-agent-*.exe; do
+        [ -f "$exe" ] && cp -f "$exe" "$OUTPUT_DIR/" && echo "  copied: $exe"
+    done
+
+    echo ""
+    ls -la "$OUTPUT_DIR/"*.exe 2>/dev/null && echo "DONE: see $OUTPUT_DIR/"
 }
 
 case "${1:-deb}" in
