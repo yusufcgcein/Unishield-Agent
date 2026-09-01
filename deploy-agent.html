@@ -51,6 +51,8 @@
   .field .hint { color: var(--text-muted); font-size: 12px; margin-bottom: 6px; }
   .field input { width: 100%; padding: 11px 12px; background: var(--bg-card); border: 1px solid var(--border); border-radius: 6px; color: var(--text); font-size: 14px; }
   .field input:focus { outline: 2px solid var(--brand); border-color: transparent; }
+  .field select { width: 100%; padding: 11px 12px; background: var(--bg-card); border: 1px solid var(--border); border-radius: 6px; color: var(--text); font-size: 14px; }
+  .field select:focus { outline: 2px solid var(--brand); border-color: transparent; }
   .chips { display: flex; flex-wrap: wrap; gap: 8px; }
   .chip { padding: 7px 14px; background: var(--bg-card); border: 1px solid var(--border); border-radius: 20px; font-size: 13px; cursor: pointer; transition: all .15s; }
   .chip:hover { border-color: var(--brand); }
@@ -105,6 +107,50 @@
 
   <div class="step-head">
     <div class="step-badge">3</div>
+    <div><div class="step-title">Environment / advanced options</div><div class="step-desc">Customize ports, credentials, or protocol for this deployment.</div></div>
+  </div>
+  <div id="advFields" class="form-grid">
+    <!-- Wazuh agent options (shown for deb/rpm/msi/pkg) -->
+    <div class="field wazuh-opt">
+      <label>Manager port</label>
+      <div class="hint">Wazuh reporting port (default 1514).</div>
+      <input type="text" id="managerPort" value="1514">
+    </div>
+    <div class="field wazuh-opt">
+      <label>Protocol</label>
+      <div class="hint">tcp or udp.</div>
+      <select id="protocol"><option value="tcp">tcp</option><option value="udp">udp</option></select>
+    </div>
+    <div class="field wazuh-opt">
+      <label>Enrollment port</label>
+      <div class="hint">Agent enrollment port (default 1515).</div>
+      <input type="text" id="enrollPort" value="1515">
+    </div>
+    <!-- Metricbeat options (shown for metricbeat-win) -->
+    <div class="field mb-opt">
+      <label>OpenSearch / indexer URL</label>
+      <div class="hint">Indexer host:port (default https://100.110.74.122:9200).</div>
+      <input type="text" id="osUrl" value="https://100.110.74.122:9200">
+    </div>
+    <div class="field mb-opt">
+      <label>OpenSearch username</label>
+      <div class="hint">Indexer user (default admin).</div>
+      <input type="text" id="osUser" value="admin">
+    </div>
+    <div class="field mb-opt">
+      <label>OpenSearch password</label>
+      <div class="hint">Indexer password for the user above.</div>
+      <input type="password" id="osPass" value="">
+    </div>
+    <div class="field mb-opt">
+      <label>Metricbeat index pattern</label>
+      <div class="hint">Index written per day (default metricbeat-7.10.2).</div>
+      <input type="text" id="mbIndex" value="metricbeat-7.10.2">
+    </div>
+  </div>
+
+  <div class="step-head">
+    <div class="step-badge">4</div>
     <div><div class="step-title">Select one or more existing groups</div><div class="step-desc">Assign the agent to a configuration group (optional).</div></div>
   </div>
   <div class="chips" id="groupChips">
@@ -114,7 +160,7 @@
   </div>
 
   <div class="step-head">
-    <div class="step-badge">4</div>
+    <div class="step-badge">5</div>
     <div><div class="step-title">Run the following command to download and install the agent</div><div class="step-desc">You will need administrator privileges. Copy and run in a terminal on the target system.</div></div>
   </div>
   <div class="cmd-box">
@@ -139,7 +185,7 @@ var PACKAGES = [
   { id: "deb-amd64",    os: "Ubuntu / Debian", cls: "debian", badge: "D", arch: "amd64",            base: MY_BASE,    file: "unishield-agent_4.14.7-1_amd64.deb", install: "deb", shell: "bash" },
   { id: "deb-aarch64",  os: "Ubuntu / Debian", cls: "debian", badge: "D", arch: "arm64 / aarch64",   base: WAZUH_BASE, file: "apt/pool/main/w/wazuh-agent/wazuh-agent_4.14.7-1_arm64.deb", install: "deb", shell: "bash" },
   // Windows
-  { id: "msi",          os: "Windows",       cls: "windows", badge: "W", arch: "32/64-bit",          base: WAZUH_BASE, file: "windows/wazuh-agent-4.14.7-1.msi",   install: "msi", shell: "powershell" },
+  { id: "msi",          os: "Windows",       cls: "windows", badge: "W", arch: "32/64-bit",          base: MY_BASE,    file: "unishield-agent-4.14.7.exe",   install: "msi", shell: "powershell" },
   // Windows Metricbeat (performance metrics -> Unishield 360 indexer)
   { id: "metricbeat-win", os: "Windows Metricbeat", cls: "windows", badge: "M", arch: "amd64",       base: MY_BASE,    file: "unishield-metric-agent-7.10.2.exe", install: "metricbeat", shell: "powershell" },
   // macOS
@@ -185,23 +231,58 @@ function buildCommand() {
   var url = p.base + "/" + p.file;
   // My server uses a self-signed cert -> needs -k; Wazuh official uses valid TLS.
   var curlFlag = (p.base === MY_BASE) ? " -k" : "";
-  var env = " WAZUH_MANAGER='" + ip + "'";
-  if (name) env += " WAZUH_AGENT_NAME='" + name + "'";
-  if (groups.length) env += " WAZUH_AGENT_GROUP='" + groups.join(",") + "'";
-  if (p.install === "rpm") return "curl" + curlFlag + " -o " + p.file + " " + url + " && sudo" + env + " rpm -ihv " + p.file;
-  if (p.install === "deb") return "curl" + curlFlag + " -o " + p.file + " " + url + " && sudo" + env + " dpkg -i " + p.file;
-  if (p.install === "msi") return "Invoke-WebRequest -Uri '" + url + "' -OutFile .\\" + p.file + "\nmsiexec.exe /i " + p.file + " /qn WAZUH_MANAGER='" + ip + "'" + (name ? " WAZUH_AGENT_NAME='" + name + "'" : "") + (groups.length ? " WAZUH_AGENT_GROUP='" + groups.join(",") + "'" : "");
-  if (p.install === "metricbeat") return "$ErrorActionPreference = 'Stop'\n" +
+
+  // ---- Wazuh agent env vars (deb/rpm/pkg) ----
+  if (p.install === "rpm" || p.install === "deb" || p.install === "pkg") {
+    var port = document.getElementById("managerPort").value.trim() || "1514";
+    var proto = document.getElementById("protocol").value || "tcp";
+    var enr = document.getElementById("enrollPort").value.trim() || "1515";
+    var env = " WAZUH_MANAGER='" + ip + "'" +
+              " WAZUH_MANAGER_PORT='" + port + "'" +
+              " WAZUH_PROTOCOL='" + proto + "'" +
+              " WAZUH_REGISTRATION_PORT='" + enr + "'";
+    if (name) env += " WAZUH_AGENT_NAME='" + name + "'";
+    if (groups.length) env += " WAZUH_AGENT_GROUP='" + groups.join(",") + "'";
+    if (p.install === "rpm") return "curl" + curlFlag + " -o " + p.file + " " + url + " && sudo" + env + " rpm -ihv " + p.file;
+    if (p.install === "deb") return "curl" + curlFlag + " -o " + p.file + " " + url + " && sudo" + env + " dpkg -i " + p.file;
+    if (p.install === "pkg") return "curl" + curlFlag + " -o " + p.file + " " + url + " && sudo" + env + " installer -pkg " + p.file + " -target /";
+    return "";
+  }
+
+  var osUser = document.getElementById("osUser").value.trim() || "admin";
+  var osPass = document.getElementById("osPass").value.trim();
+  var osUrl = document.getElementById("osUrl").value.trim() || "https://100.110.74.122:9200";
+  var mbIndex = document.getElementById("mbIndex").value.trim() || "metricbeat-7.10.2";
+  var urlRepl = "-replace 'hosts: \\[[^]]*\\]', 'hosts: [\"" + osUrl + "\"]'";
+  var credPatch = osPass ? "Set-Content -Path 'C:\\Program Files\\ossec-agent\\metricbeat-oss\\metricbeat.yml' -Value ((Get-Content 'C:\\Program Files\\ossec-agent\\metricbeat-oss\\metricbeat.yml' -Raw) " + urlRepl + " -replace 'username: \".*\"', 'username: \"" + osUser + "\"' -replace 'password: \".*\"', 'password: \"" + osPass + "\"' -replace 'index: \"[^\"]*\"', 'index: \"" + mbIndex + "-%{+yyyy.MM.dd}\"')\nRestart-Service metricbeat -ErrorAction SilentlyContinue\n" : "";
+
+  // ---- Combined installer (Wazuh agent + optional Metricbeat component) ----
+  if (p.install === "msi") return "$ErrorActionPreference = 'Stop'\n" +
     "if (-not ([Security.Principal.WindowsPrincipal][Security.Principal.WindowsIdentity]::GetCurrent()).IsInRole([Security.Principal.WindowsBuiltInRole]::Administrator)) { Write-Host 'Run PowerShell as Administrator'; exit 1 }\n" +
     "Invoke-WebRequest -Uri '" + url + "' -OutFile .\\" + p.file + "\n" +
     "Start-Process -FilePath .\\" + p.file + " -ArgumentList '/S' -Wait\n" +
+    credPatch +
+    "Get-Service WazuhSvc, metricbeat -ErrorAction SilentlyContinue";
+
+  // ---- Standalone Metricbeat (performance agent) ----
+  var mbPath = "C:\\Program Files\\metricbeat-oss\\metricbeat.yml";
+  var mbCredPatch = osPass ? "Set-Content -Path '" + mbPath + "' -Value ((Get-Content '" + mbPath + "' -Raw) " + urlRepl + " -replace 'username: \".*\"', 'username: \"" + osUser + "\"' -replace 'password: \".*\"', 'password: \"" + osPass + "\"' -replace 'index: \"[^\"]*\"', 'index: \"" + mbIndex + "-%{+yyyy.MM.dd}\"')\nRestart-Service metricbeat -ErrorAction SilentlyContinue\n" : "";
+  return "$ErrorActionPreference = 'Stop'\n" +
+    "if (-not ([Security.Principal.WindowsPrincipal][Security.Principal.WindowsIdentity]::GetCurrent()).IsInRole([Security.Principal.WindowsBuiltInRole]::Administrator)) { Write-Host 'Run PowerShell as Administrator'; exit 1 }\n" +
+    "Invoke-WebRequest -Uri '" + url + "' -OutFile .\\" + p.file + "\n" +
+    "Start-Process -FilePath .\\" + p.file + " -ArgumentList '/S' -Wait\n" +
+    mbCredPatch +
     "Get-Service metricbeat";
-  if (p.install === "pkg") return "curl" + curlFlag + " -o " + p.file + " " + url + " && sudo" + env + " installer -pkg " + p.file + " -target /";
-  return "";
 }
 
 function renderAll() {
   document.querySelectorAll(".os-card").forEach(function(el, i){ el.classList.toggle("selected", PACKAGES[i].id === selectedId); });
+  // Show/hide environment fields based on package type
+  var ptype = getPkg().install;
+  var isMb = (ptype === "metricbeat");
+  var isCombined = (ptype === "msi");
+  document.querySelectorAll(".wazuh-opt").forEach(function(el){ el.style.display = (isMb) ? "none" : ""; });
+  document.querySelectorAll(".mb-opt").forEach(function(el){ el.style.display = (isMb || isCombined) ? "" : "none"; });
   var cmd = buildCommand();
   document.getElementById("cmdOut").textContent = cmd;
   var ip = document.getElementById("serverIp").value.trim();
@@ -209,8 +290,20 @@ function renderAll() {
   if (!ip) { nb.textContent = "Enter a server address to generate the install command."; return; }
   var p = getPkg();
   var msg = "The agent will auto-enroll to " + ip + " (no authentication key needed).";
-  if (p.install === "metricbeat") msg = "The Metricbeat agent will collect Windows performance metrics and send them to the indexer at " + ip + ".";
-  else if (p.base === MY_BASE) msg += " Package from Unishield 360 server.";
+  if (p.install === "metricbeat") {
+    msg = "The Metricbeat agent will collect Windows performance metrics and send them to the indexer at " + ip + ".";
+    var osu = document.getElementById("osUser").value.trim();
+    if (osu) msg += " OpenSearch user: " + osu + ".";
+  } else if (p.install === "msi") {
+    var pt2 = document.getElementById("managerPort").value.trim() || "1514";
+    msg += " Reporting on port " + pt2 + ".";
+    msg += " The Windows installer also offers the Metric Agent component (use the OpenSearch fields above to set its credentials).";
+  } else {
+    var pt = document.getElementById("managerPort").value.trim() || "1514";
+    var en = document.getElementById("enrollPort").value.trim() || "1515";
+    msg += " Reporting on port " + pt + " / enrollment " + en + ".";
+  }
+  if (p.base === MY_BASE) msg += " Package from Unishield 360 server.";
   else msg += " Package from Wazuh official repository (prebuilt).";
   var an = document.getElementById("agentName").value.trim();
   if (an) msg += " Agent name: " + an + ".";
@@ -222,6 +315,13 @@ function renderAll() {
 
 document.getElementById("serverIp").addEventListener("input", renderAll);
 document.getElementById("agentName").addEventListener("input", renderAll);
+document.getElementById("managerPort").addEventListener("input", renderAll);
+document.getElementById("protocol").addEventListener("change", renderAll);
+document.getElementById("enrollPort").addEventListener("input", renderAll);
+document.getElementById("osUser").addEventListener("input", renderAll);
+document.getElementById("osPass").addEventListener("input", renderAll);
+document.getElementById("osUrl").addEventListener("input", renderAll);
+document.getElementById("mbIndex").addEventListener("input", renderAll);
 
 document.getElementById("copyBtn").onclick = function(){
   var text = document.getElementById("cmdOut").textContent;
