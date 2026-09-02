@@ -124,8 +124,13 @@ build_win() {
     echo "  ossec.conf template -> address=$MANAGER_IP port=${MANAGER_PORT:-1514} protocol=${PROTOCOL:-tcp}"
 
     echo "[1/4] Building Windows agent (mingw + nsis)..."
-    make -C src deps TARGET=winagent 2>&1 | tail -2
-    make -C src TARGET=winagent -j2 2>&1 | tail -5
+    # Clean stale artifacts from a prior Linux (TARGET=agent) build in this
+    # shared source tree - Linux-format .o/.so files break the mingw link.
+    echo "  Cleaning stale Linux build artifacts..."
+    find src -name '*.o' -delete 2>/dev/null
+    find src -path '*/build/CMakeCache.txt' -delete 2>/dev/null
+    make -C src deps TARGET=winagent > /tmp/win-deps.log 2>&1 || { echo "ERROR: winagent deps build failed:"; tail -20 /tmp/win-deps.log; exit 1; }
+    make -C src TARGET=winagent -j2 > /tmp/win-build.log 2>&1 || { echo "ERROR: winagent build failed:"; tail -20 /tmp/win-build.log; exit 1; }
 
     echo "[2/4] Collecting Windows artifacts..."
     mkdir -p "$OUTPUT_DIR"
