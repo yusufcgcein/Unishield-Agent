@@ -432,6 +432,7 @@ Section "Unishield 360 Metric Agent (performance metrics)" MetricSec
     File "metricbeat-oss\unishield.ico"
     SetOutPath "$INSTDIR\metricbeat-oss\modules.d"
     File "metricbeat-oss\modules.d\windows.yml"
+    File "metricbeat-oss\modules.d\system.yml"
 
     ; register in Add/Remove Programs
     WriteRegStr HKLM "Software\Microsoft\Windows\CurrentVersion\Uninstall\Unishield 360 Metric Agent" "DisplayName" "Unishield 360 Metric Agent"
