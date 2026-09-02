@@ -90,7 +90,7 @@ build_rpm() {
 
     echo "[3/4] Running rpmbuild..."
     HASHCOMMIT=$(git rev-parse --short HEAD 2>/dev/null || echo "0000000")
-    rpmbuild --define "_topdir $(pwd)/rpmbuild" \
+    rpmbuild --nodeps --define "_topdir $(pwd)/rpmbuild" \
         --define "_version ${VERSION}" \
         --define "_release ${REVISION}" \
         --define "_hashcommit ${HASHCOMMIT}" \
