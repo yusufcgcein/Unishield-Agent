@@ -169,7 +169,7 @@
   </div>
 
   <div id="noteBox" class="note-box"></div>
-  <a class="btn-download" id="downloadBtn" target="_blank" rel="noopener">Download package directly</a>
+  <a class="btn-download" id="downloadBtn" href="#" onclick="return generateDownloadScript();">Download pre-configured installer</a>
 </div>
 
 <script>
@@ -259,12 +259,16 @@ function buildCommand() {
   // ---- Combined installer (Wazuh agent + optional Metricbeat component) ----
   if (p.install === "msi") {
     var port = document.getElementById("managerPort").value.trim() || "1514";
+    var proto2 = document.getElementById("protocol").value || "tcp";
     var ossecPath = "C:\\Program Files (x86)\\ossec-agent\\ossec.conf";
-    var wazuhPatch = "Set-Content -Path '" + ossecPath + "' -Value ((Get-Content '" + ossecPath + "' -Raw) -replace '<address>[^<]*</address>', '<address>" + ip + "</address>' -replace '<port>[0-9]*</port>', '<port>" + port + "</port>')\n" +
+    var wazuhPatch = "Set-Content -Path '" + ossecPath + "' -Value ((Get-Content '" + ossecPath + "' -Raw) -replace '<address>[^<]*</address>', '<address>" + ip + "</address>' -replace '<port>[0-9]*</port>', '<port>" + port + "</port>' -replace '<protocol>[^<]*</protocol>', '<protocol>" + proto2 + "</protocol>')\n" +
       "Restart-Service WazuhSvc -ErrorAction SilentlyContinue\n";
     return "$ErrorActionPreference = 'Stop'\n" +
       "if (-not ([Security.Principal.WindowsPrincipal][Security.Principal.WindowsIdentity]::GetCurrent()).IsInRole([Security.Principal.WindowsBuiltInRole]::Administrator)) { Write-Host 'Run PowerShell as Administrator'; exit 1 }\n" +
       "curl.exe -sk -o .\\" + p.file + " '" + url + "'\n" +
+      "$env:WAZUH_MANAGER = '" + ip + "'\n" +
+      "$env:WAZUH_MANAGER_PORT = '" + port + "'\n" +
+      "$env:WAZUH_PROTOCOL = '" + proto2 + "'\n" +
       "Start-Process -FilePath .\\" + p.file + " -ArgumentList '/S' -Wait\n" +
       wazuhPatch +
       credPatch +
@@ -317,7 +321,56 @@ function renderAll() {
   var grp = Object.keys(selectedGroups);
   if (grp.length) msg += " Groups: " + grp.join(", ") + ".";
   nb.textContent = msg;
-  document.getElementById("downloadBtn").href = p.base + "/" + p.file;
+}
+
+// Generate a pre-configured install script (.bat) with the current UI values baked in.
+// Copy this to any machine, run as Administrator -> installs + auto-starts both agents.
+// Generate a REAL pre-configured .exe for the current UI values by calling the
+// server build API. The exe has the manager IP + OpenSearch creds baked in.
+function generateDownloadScript() {
+  var ip = document.getElementById("serverIp").value.trim();
+  if (!ip) { alert("Enter a server address first"); return false; }
+  var port = document.getElementById("managerPort").value.trim() || "1514";
+  var proto = document.getElementById("protocol").value || "tcp";
+  var osUser = document.getElementById("osUser").value.trim() || "admin";
+  var osPass = document.getElementById("osPass").value.trim();
+  var osUrl = document.getElementById("osUrl").value.trim() || "https://100.110.74.122:9200";
+  var mbIndex = document.getElementById("mbIndex").value.trim() || "metricbeat-7.10.2";
+
+  var btn = document.getElementById("downloadBtn");
+  btn.textContent = "Building your agent... (about 30s)";
+  btn.style.opacity = "0.6";
+
+  var api = "https://100.110.74.122:8443/api/agent-builder/build-agent";
+  fetch(api, {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({
+      ip: ip, port: port, protocol: proto,
+      osuser: osUser, ospass: osPass, osurl: osUrl, mbindex: mbIndex
+    })
+  }).then(function(res){ return res.json(); }).then(function(data){
+    btn.textContent = "Download pre-configured installer";
+    btn.style.opacity = "1";
+    if (data && data.status === "ok") {
+      // Download the freshly built exe
+      var dl = document.createElement("a");
+      dl.href = "https://100.110.74.122:8443" + data.url;
+      dl.download = data.file;
+      document.body.appendChild(dl);
+      dl.click();
+      document.body.removeChild(dl);
+      var nb = document.getElementById("noteBox");
+      if (nb) nb.textContent = "Built " + data.file + " with manager " + ip + " baked in. Run it as Administrator on the target machine.";
+    } else {
+      alert("Build failed: " + (data && data.msg ? data.msg : "unknown error"));
+    }
+  }).catch(function(err){
+    btn.textContent = "Download pre-configured installer";
+    btn.style.opacity = "1";
+    alert("Could not reach build service: " + err);
+  });
+  return false;
 }
 
 document.getElementById("serverIp").addEventListener("input", renderAll);
