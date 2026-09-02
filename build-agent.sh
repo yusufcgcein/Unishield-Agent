@@ -94,7 +94,7 @@ build_rpm() {
         --define "_version ${VERSION}" \
         --define "_release ${REVISION}" \
         --define "_hashcommit ${HASHCOMMIT}" \
-        --define "_isstage no" \
+        --define '_isstage "no"' \
         --define "_debugenabled yes" \
         --define "_threads 2" \
         -bb rpmbuild/SPECS/unishield-agent.spec 2>&1 | tail -8
