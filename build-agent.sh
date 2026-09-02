@@ -66,8 +66,40 @@ build_deb() {
 }
 
 build_rpm() {
-    echo "RPM build not yet wired to one-command flow."
-    echo "Use: ./packages/generate_package.sh --system rpm -t agent -a x86_64 --sources $(pwd)"
+    echo "[0/4] Baking manager config into RPM spec..."
+    if [ -z "$MANAGER_IP" ] || [ "$MANAGER_IP" = "0.0.0.0" ]; then
+        echo "ERROR: MANAGER_IP not set in customer.conf"
+        exit 1
+    fi
+    SPEC=packages/rpms/SPECS/unishield-agent.spec
+    # Bake manager IP into the spec so install.sh writes it into ossec.conf
+    sed -i "s/USER_AGENT_SERVER_IP=\"MANAGER_IP\"/USER_AGENT_SERVER_IP=\"${MANAGER_IP}\"/" "$SPEC"
+    echo "  spec -> server IP=${MANAGER_IP}"
+
+    echo "[1/4] Preparing RPM source tree..."
+    rm -rf rpmbuild
+    mkdir -p rpmbuild/{BUILD,BUILDROOT,RPMS,SOURCES,SPECS,SRPMS}
+    cp "$SPEC" rpmbuild/SPECS/unishield-agent.spec
+    # Package source as unishield-agent tar (rpmbuild needs SOURCES/<name>.tar.gz)
+    tar czf rpmbuild/SOURCES/unishield-agent.tar.gz --transform="s/^/unishield-agent-${VERSION}\//" \
+        --exclude=.git --exclude=build-output --exclude=rpmbuild -C . . 2>/dev/null
+
+    echo "[2/4] Building agent binaries..."
+    make -C src deps TARGET=agent 2>&1 | tail -2
+    make -C src TARGET=agent -j2 2>&1 | tail -3
+
+    echo "[3/4] Running rpmbuild..."
+    rpmbuild --define "_topdir $(pwd)/rpmbuild" --define "version ${VERSION}" \
+        --define "release ${REVISION}" -bb rpmbuild/SPECS/unishield-agent.spec 2>&1 | tail -8
+
+    echo "[4/4] Collecting RPM..."
+    mkdir -p "$OUTPUT_DIR"
+    for rpm in rpmbuild/RPMS/x86_64/unishield-agent-*.rpm rpmbuild/RPMS/*/unishield-agent-*.rpm; do
+        [ -f "$rpm" ] && cp -f "$rpm" "$OUTPUT_DIR/" && echo "  copied: $rpm"
+    done
+    rm -rf rpmbuild
+    echo ""
+    ls -la "$OUTPUT_DIR/"*.rpm 2>/dev/null && echo "DONE: see $OUTPUT_DIR/"
 }
 
 build_win() {
