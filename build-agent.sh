@@ -136,9 +136,26 @@ build_win() {
     ls -la "$OUTPUT_DIR/"*.exe 2>/dev/null && echo "DONE: see $OUTPUT_DIR/"
 }
 
+build_macos() {
+    echo "[1/3] Preparing macOS package builder..."
+    echo "  NOTE: macOS .pkg builds require a Mac with munkipkg + a code-signing cert."
+    echo "  This script prepares the whitelabeled source; run on a Mac:"
+    echo "    packages/macos/generate_wazuh_packages.sh -b ${BRANCH:-main} -v ${VERSION} -r ${REVISION} -a x86_64"
+    echo ""
+
+    echo "[2/3] Verifying whitelabel files..."
+    grep -q "Unishield 360" packages/macos/package_files/introduction.txt && echo "  introduction.txt: branded OK"
+    grep -q "unishield360" packages/macos/specs/build-info.json && echo "  build-info.json: branded OK"
+    grep -q "unishield" packages/macos/generate_wazuh_packages.sh && echo "  generate script: branded OK"
+
+    echo "[3/3] macOS prep complete. Build on a Mac to produce .pkg."
+    echo ""
+}
+
 case "${1:-deb}" in
     deb) build_deb ;;
     rpm) build_rpm ;;
     win) build_win ;;
-    *)   echo "Usage: ./build-agent.sh [deb|rpm|win]"; exit 1 ;;
+    macos) build_macos ;;
+    *)   echo "Usage: ./build-agent.sh [deb|rpm|win|macos]"; exit 1 ;;
 esac
