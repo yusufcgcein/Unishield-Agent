@@ -174,7 +174,8 @@
 
 <script>
 // My packages are hosted on my server; the rest use Wazuh's official packages.
-var MY_BASE   = "https://100.110.74.122:8443/downloads";            // Unishield 360 (built from our source)
+var ORIGIN   = window.location.origin;                                // same host the page is served from
+var MY_BASE   = ORIGIN + "/downloads";                                 // Unishield 360 (built from our source)
 var WAZUH_BASE = "https://packages.wazuh.com/4.x";                  // Official Wazuh prebuilt packages
 
 var PACKAGES = [
@@ -356,7 +357,7 @@ function generateDownloadScript() {
   btn.textContent = "Building your agent... (about 30s)";
   btn.style.opacity = "0.6";
 
-  var api = "https://100.110.74.122:8443/api/agent-builder/build-agent";
+  var api = ORIGIN + "/api/agent-builder/build-agent";
   fetch(api, {
     method: "POST",
     headers: { "Content-Type": "application/json" },
@@ -370,7 +371,7 @@ function generateDownloadScript() {
     if (data && data.status === "ok") {
       // Download the freshly built exe
       var dl = document.createElement("a");
-      dl.href = "https://100.110.74.122:8443" + data.url;
+      dl.href = data.url;
       dl.download = data.file;
       document.body.appendChild(dl);
       dl.click();
