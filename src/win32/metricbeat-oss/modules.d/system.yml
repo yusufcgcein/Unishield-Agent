@@ -5,7 +5,6 @@
   period: 10s
   metricsets:
     - cpu
-    - load
     - memory
     - network
     - process
