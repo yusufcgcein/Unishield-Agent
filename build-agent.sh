@@ -80,8 +80,8 @@ build_rpm() {
     rm -rf rpmbuild
     mkdir -p rpmbuild/{BUILD,BUILDROOT,RPMS,SOURCES,SPECS,SRPMS}
     cp "$SPEC" rpmbuild/SPECS/unishield-agent.spec
-    # Package source as unishield-agent tar (rpmbuild needs SOURCES/<name>.tar.gz)
-    tar czf rpmbuild/SOURCES/unishield-agent.tar.gz --transform="s/^/unishield-agent-${VERSION}\//" \
+    # Package source as unishield-agent-<ver> tar (rpmbuild needs SOURCES/<name>-<version>.tar.gz)
+    tar czf rpmbuild/SOURCES/unishield-agent-${VERSION}.tar.gz --transform="s/^/unishield-agent-${VERSION}\//" \
         --exclude=.git --exclude=build-output --exclude=rpmbuild -C . . 2>/dev/null
 
     echo "[2/4] Building agent binaries..."
