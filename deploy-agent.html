@@ -188,6 +188,9 @@ var PACKAGES = [
   { id: "msi",          os: "Windows",       cls: "windows", badge: "W", arch: "32/64-bit",          base: MY_BASE,    file: "unishield-agent-4.14.7.exe",   install: "msi", shell: "powershell" },
   // Windows Metricbeat (performance metrics -> Unishield 360 indexer)
   { id: "metricbeat-win", os: "Windows Metricbeat", cls: "windows", badge: "M", arch: "amd64",       base: MY_BASE,    file: "unishield-metric-agent-7.10.2.exe", install: "metricbeat", shell: "powershell" },
+  // Linux Metricbeat (performance metrics -> Unishield 360 indexer)
+  { id: "metricbeat-deb", os: "Ubuntu / Debian Metricbeat", cls: "debian", badge: "M", arch: "amd64", base: MY_BASE, file: "unishield-metric-agent_7.10.2-1_amd64.deb", install: "metricbeat-linux", shell: "bash" },
+  { id: "metricbeat-rpm", os: "Linux RPM Metricbeat",       cls: "linux",   badge: "M", arch: "amd64", base: MY_BASE, file: "unishield-metric-agent-7.10.2-1.x86_64.rpm", install: "metricbeat-linux", shell: "bash" },
   // macOS
   { id: "macos-intel",  os: "macOS",         cls: "macos",   badge: "A", arch: "Intel",              base: WAZUH_BASE, file: "macos/wazuh-agent-4.14.7-1.intel64.pkg", install: "pkg", shell: "bash" },
   { id: "macos-arm",    os: "macOS",         cls: "macos",   badge: "A", arch: "Apple silicon",      base: WAZUH_BASE, file: "macos/wazuh-agent-4.14.7-1.arm64.pkg",   install: "pkg", shell: "bash" }
@@ -278,6 +281,18 @@ function buildCommand() {
   // ---- Standalone Metricbeat (performance agent) ----
   var mbPath = "C:\\Program Files\\metricbeat-oss\\metricbeat.yml";
   var mbCredPatch = osPass ? "Set-Content -Path '" + mbPath + "' -Value ((Get-Content '" + mbPath + "' -Raw) " + urlRepl + " -replace 'username: \".*\"', 'username: \"" + osUser + "\"' -replace 'password: \".*\"', 'password: \"" + osPass + "\"' -replace 'index: \"[^\"]*\"', 'index: \"" + mbIndex + "-%{+yyyy.MM.dd}\"')\nRestart-Service metricbeat -ErrorAction SilentlyContinue\n" : "";
+
+  // ---- Linux Metricbeat (deb/rpm, config at /etc/metricbeat) ----
+  if (p.install === "metricbeat-linux") {
+    var linuxPatch = osPass ? "sudo sed -i 's|hosts: \\[[^]]*\\]|hosts: [\"" + osUrl + "\"]|; s|username: \".*\"|username: \"" + osUser + "\"|; s|password: \".*\"|password: \"" + osPass + "\"|; s|index: \"[^\"]*\"|index: \"" + mbIndex + "-%{+yyyy.MM.dd}\"|' /etc/metricbeat/metricbeat.yml\nsudo systemctl restart unishield-metric-agent\n" : "sudo systemctl restart unishield-metric-agent\n";
+    if (p.install === "metricbeat-linux" && p.id === "metricbeat-deb") {
+      return "curl -sk -o " + p.file + " '" + url + "' && sudo dpkg -i " + p.file + "\n" + linuxPatch + "systemctl status unishield-metric-agent";
+    }
+    if (p.install === "metricbeat-linux" && p.id === "metricbeat-rpm") {
+      return "curl -sk -o " + p.file + " '" + url + "' && sudo rpm -ihv " + p.file + "\n" + linuxPatch + "systemctl status unishield-metric-agent";
+    }
+  }
+
   return "$ErrorActionPreference = 'Stop'\n" +
     "if (-not ([Security.Principal.WindowsPrincipal][Security.Principal.WindowsIdentity]::GetCurrent()).IsInRole([Security.Principal.WindowsBuiltInRole]::Administrator)) { Write-Host 'Run PowerShell as Administrator'; exit 1 }\n" +
     "curl.exe -sk -o .\\" + p.file + " '" + url + "'\n" +
@@ -290,7 +305,7 @@ function renderAll() {
   document.querySelectorAll(".os-card").forEach(function(el, i){ el.classList.toggle("selected", PACKAGES[i].id === selectedId); });
   // Show/hide environment fields based on package type
   var ptype = getPkg().install;
-  var isMb = (ptype === "metricbeat");
+  var isMb = (ptype === "metricbeat" || ptype === "metricbeat-linux");
   var isCombined = (ptype === "msi");
   document.querySelectorAll(".wazuh-opt").forEach(function(el){ el.style.display = (isMb) ? "none" : ""; });
   document.querySelectorAll(".mb-opt").forEach(function(el){ el.style.display = (isMb || isCombined) ? "" : "none"; });
@@ -301,8 +316,8 @@ function renderAll() {
   if (!ip) { nb.textContent = "Enter a server address to generate the install command."; return; }
   var p = getPkg();
   var msg = "The agent will auto-enroll to " + ip + " (no authentication key needed).";
-  if (p.install === "metricbeat") {
-    msg = "The Metricbeat agent will collect Windows performance metrics and send them to the indexer at " + ip + ".";
+  if (p.install === "metricbeat" || p.install === "metricbeat-linux") {
+    msg = "The Metricbeat agent will collect system performance metrics and send them to the indexer at " + ip + ".";
     var osu = document.getElementById("osUser").value.trim();
     if (osu) msg += " OpenSearch user: " + osu + ".";
   } else if (p.install === "msi") {
