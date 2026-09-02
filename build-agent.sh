@@ -89,8 +89,15 @@ build_rpm() {
     make -C src TARGET=agent -j2 2>&1 | tail -3
 
     echo "[3/4] Running rpmbuild..."
-    rpmbuild --define "_topdir $(pwd)/rpmbuild" --define "version ${VERSION}" \
-        --define "release ${REVISION}" -bb rpmbuild/SPECS/unishield-agent.spec 2>&1 | tail -8
+    HASHCOMMIT=$(git rev-parse --short HEAD 2>/dev/null || echo "0000000")
+    rpmbuild --define "_topdir $(pwd)/rpmbuild" \
+        --define "_version ${VERSION}" \
+        --define "_release ${REVISION}" \
+        --define "_hashcommit ${HASHCOMMIT}" \
+        --define "_isstage no" \
+        --define "_debugenabled yes" \
+        --define "_threads 2" \
+        -bb rpmbuild/SPECS/unishield-agent.spec 2>&1 | tail -8
 
     echo "[4/4] Collecting RPM..."
     mkdir -p "$OUTPUT_DIR"
