@@ -13,7 +13,7 @@ $ErrorActionPreference = "Continue"
 #    Prevents Sysmon/Security channels from filling the endpoint disk.
 # ---------------------------------------------------------------------------
 $channels = @(
-    @{ Name = "Microsoft-Windows-Sysmon/Operational";                       SizeMB = 1024 },
+    @{ Name = "Microsoft-Windows-Sysmon/Operational";                       SizeMB = 500 },
     @{ Name = "Microsoft-Windows-Windows Firewall With Advanced Security/Firewall"; SizeMB = 256 },
     @{ Name = "Microsoft-Windows-Windows Defender/Operational";             SizeMB = 256 },
     @{ Name = "Microsoft-Windows-PowerShell/Operational";                   SizeMB = 512 },
