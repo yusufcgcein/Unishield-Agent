@@ -41,36 +41,68 @@ foreach ($ch in $channels) {
 # 2. auditpol - enable audit categories so Security events populate
 # ---------------------------------------------------------------------------
 $auditRules = @(
-    "Logon/Logoff /success:enable /failure:enable",
-    "Account Logon /success:enable /failure:enable",
-    "Account Management /success:enable /failure:enable",
-    "Detailed Tracking /success:enable /failure:enable",
-    "Policy Change /success:enable /failure:enable",
-    "Object Access /success:enable /failure:enable",
-    "Privilege Use /success:enable /failure:enable",
-    "System /success:enable /failure:enable"
+    @{ Category = "Logon/Logoff";  Success = "enable"; Failure = "enable" },
+    @{ Category = "Account Logon"; Success = "enable"; Failure = "enable" },
+    @{ Category = "Account Management"; Success = "enable"; Failure = "enable" },
+    @{ Category = "Detailed Tracking"; Success = "enable"; Failure = "enable" },
+    @{ Category = "Policy Change"; Success = "enable"; Failure = "enable" },
+    @{ Category = "Object Access"; Success = "enable"; Failure = "enable" },
+    @{ Category = "Privilege Use"; Success = "enable"; Failure = "enable" },
+    @{ Category = "System"; Success = "enable"; Failure = "enable" }
 )
-foreach ($rule in $auditRules) {
-    & auditpol.exe /set /subcategory:$rule 2>$null | Out-Null
+foreach ($r in $auditRules) {
+    & auditpol.exe /set /subcategory:"$($r.Category)" "/success:$($r.Success)" "/failure:$($r.Failure)" 2>$null | Out-Null
     if ($LASTEXITCODE -eq 0) {
-        Write-Host "auditpol OK: $rule"
+        Write-Host "auditpol OK: $($r.Category)"
     } else {
-        Write-Host "auditpol note: $rule (may require admin / unsupported on this SKU)"
+        Write-Host "auditpol note: $($r.Category) (may require admin / unsupported on this SKU)"
     }
 }
 
 # ---------------------------------------------------------------------------
-# 3. Sysmon - install if a Sysmon binary + config are bundled next to this script
+# 3. Sysmon - install if bundled, else auto-download from Microsoft (best-effort)
 # ---------------------------------------------------------------------------
 $sysmonExe = Join-Path $ScriptDir "Sysmon64.exe"
 $sysmonConf = Join-Path $ScriptDir "sysmon-config.xml"
 $sysmonService = "Sysmon"
 $running = (Get-Service -Name $sysmonService -ErrorAction SilentlyContinue)
 
+function Download-Sysmon {
+    param([string]$TargetDir)
+    # Official Sysinternals Sysmon package (Microsoft download.microsoft.com)
+    $url = "https://download.sysinternals.com/files/Sysmon.zip"
+    $zip = Join-Path $env:TEMP "Sysmon.zip"
+    $extract = Join-Path $env:TEMP "Sysmon-extract"
+    try {
+        Invoke-WebRequest -Uri $url -OutFile $zip -UseBasicParsing -TimeoutSec 60
+        if (Test-Path $extract) { Remove-Item $extract -Recurse -Force }
+        Expand-Archive -Path $zip -DestinationPath $extract -Force
+        Copy-Item (Join-Path $extract "Sysmon64.exe") $TargetDir -Force -ErrorAction SilentlyContinue
+        Copy-Item (Join-Path $extract "Sysmon.exe") $TargetDir -Force -ErrorAction SilentlyContinue
+        Write-Host "Sysmon downloaded from Microsoft"
+        return $true
+    } catch {
+        Write-Host "Sysmon download failed: $_"
+        return $false
+    } finally {
+        if (Test-Path $zip) { Remove-Item $zip -Force }
+    }
+}
+
+if (-not (Test-Path $sysmonExe)) {
+    $downloaded = Download-Sysmon $ScriptDir
+    if ($downloaded) { $sysmonExe = Join-Path $ScriptDir "Sysmon64.exe" }
+}
+
 if (Test-Path $sysmonExe) {
     if (-not $running) {
-        & $sysmonExe -accepteula -i $sysmonConf 2>&1 | Out-Null
-        Write-Host "Sysmon installed: $(Test-Path $sysmonExe)"
+        $confArg = @()
+        if (Test-Path $sysmonConf) { $confArg = @("-c", $sysmonConf) }
+        & $sysmonExe -accepteula -i @($confArg) 2>&1 | Out-Null
+        Start-Sleep -Seconds 2
+        $svc = Get-Service -Name $sysmonService -ErrorAction SilentlyContinue
+        if ($svc) { Write-Host "Sysmon service installed: $($svc.Status)" }
+        else { Write-Host "Sysmon install failed (run manually)" }
     } else {
         # Already installed - refresh config only if a new one is bundled
         if (Test-Path $sysmonConf) {
@@ -79,7 +111,7 @@ if (Test-Path $sysmonExe) {
         }
     }
 } else {
-    Write-Host "Sysmon binary not bundled - skipping install (config channel already enabled)"
+    Write-Host "Sysmon binary unavailable (no internet or download blocked) - config channel enabled, install Sysmon manually"
 }
 
 # ---------------------------------------------------------------------------
