@@ -111,7 +111,36 @@ function Download-Sysmon {
 
 $sysmonDest = Join-Path $env:WINDIR "Sysmon64.exe"
 $sysmonService = "Sysmon"
-$running = Get-Service -Name $sysmonService -ErrorAction SilentlyContinue
+$sysmonDrv = "SysmonDrv"
+# A real Sysmon install always creates the SysmonDrv driver service. A stale
+# "Sysmon" entry without SysmonDrv is a ghost that must be cleaned and reinstalled.
+$running = (Get-Service -Name $sysmonDrv -ErrorAction SilentlyContinue)
+
+# Clean up any stale/corrupt Sysmon service (registry gone but SCM ghost, or
+# service without a valid binary). Ensures a clean install below.
+function Remove-StaleSysmon {
+    try {
+        if (Test-Path $sysmonDest) {
+            & $sysmonDest -accepteula -u 2>&1 | Out-Null
+            Start-Sleep -Seconds 2
+        }
+        sc.exe delete $sysmonService 2>&1 | Out-Null
+        sc.exe delete "SysmonDrv" 2>&1 | Out-Null
+        Remove-Item "HKLM:\SYSTEM\CurrentControlSet\Services\Sysmon" -Recurse -Force -ErrorAction SilentlyContinue
+        Remove-Item "HKLM:\SYSTEM\CurrentControlSet\Services\SysmonDrv" -Recurse -Force -ErrorAction SilentlyContinue
+        Start-Sleep -Seconds 2
+        Log "Stale Sysmon service cleaned"
+    } catch {
+        Log "Stale Sysmon cleanup note: $($_.Exception.Message)"
+    }
+}
+
+# Clean any ghost Sysmon service (exists but no SysmonDrv driver = not really installed).
+$ghostSvc = Get-Service -Name $sysmonService -ErrorAction SilentlyContinue
+if ($ghostSvc -and -not $running) {
+    Log "Found ghost Sysmon service (no driver) - cleaning before install"
+    Remove-StaleSysmon
+}
 
 if (-not $running) {
     $sysmonSrc = $null
@@ -137,9 +166,47 @@ if (-not $running) {
             Log "Sysmon install cmd exit code: $($res.Code)"
             if ($res.Output) { Log "Sysmon install output: $($res.Output)" }
             Start-Sleep -Seconds 3
-            $svc = Get-Service -Name $sysmonService -ErrorAction SilentlyContinue
+            $svc = Get-Service -Name $sysmonDrv -ErrorAction SilentlyContinue
             if ($svc) { Log "Sysmon service: $($svc.Status)" }
-            else { Log "Sysmon service NOT registered after install (check driver/signature)" }
+            else {
+                Log "Sysmon service NOT registered after install - retrying after cleanup"
+                Remove-StaleSysmon
+                Copy-Item $sysmonSrc $sysmonDest -Force
+                $res = Run $sysmonDest @("-accepteula", "-i") + $confArg
+                Log "Sysmon retry exit code: $($res.Code)"
+                Start-Sleep -Seconds 3
+                $svc = Get-Service -Name $sysmonDrv -ErrorAction SilentlyContinue
+                if ($svc) { Log "Sysmon service (after retry): $($svc.Status)" }
+                else {
+                    Log "Sysmon service still not registered - scheduling auto-finish on next boot"
+                    # The SCM may cache a ghost Sysmon entry; schedule a one-time
+                    # task to clean + install at next boot so the user does nothing.
+                    $bootScript = Join-Path $env:TEMP "unishield-sysmon-boot.ps1"
+                    @"
+# Unishield 360 - Sysmon boot-time completion
+`$ErrorActionPreference = 'Continue'
+`$log = 'C:\Program Files (x86)\ossec-agent\security-hardening-boot.log'
+Start-Sleep -Seconds 15
+sc.exe delete Sysmon | Out-Null
+sc.exe delete SysmonDrv | Out-Null
+Remove-Item 'HKLM:\SYSTEM\CurrentControlSet\Services\Sysmon' -Recurse -Force -ErrorAction SilentlyContinue
+Remove-Item 'HKLM:\SYSTEM\CurrentControlSet\Services\SysmonDrv' -Recurse -Force -ErrorAction SilentlyContinue
+Remove-Item 'C:\Windows\Sysmon64.exe' -Force -ErrorAction SilentlyContinue
+Start-Sleep -Seconds 3
+Copy-Item '$sysmonDest' 'C:\Windows\Sysmon64.exe' -Force -ErrorAction SilentlyContinue
+& 'C:\Windows\Sysmon64.exe' -accepteula -i 2>&1 | Out-Null
+Start-Sleep -Seconds 3
+`$svc = Get-Service Sysmon -ErrorAction SilentlyContinue
+if (`$svc) { Add-Content `$log 'Sysmon installed OK at boot' }
+else { Add-Content `$log 'Sysmon install failed at boot' }
+"@ | Set-Content -Path $bootScript -Encoding UTF8
+                    $action = New-ScheduledTaskAction -Execute "powershell.exe" -Argument "-NoProfile -ExecutionPolicy Bypass -File `"$bootScript`""
+                    $trigger = New-ScheduledTaskTrigger -AtStartup
+                    $principal = New-ScheduledTaskPrincipal -UserId "SYSTEM" -LogonType ServiceAccount -RunLevel Highest
+                    Register-ScheduledTask -TaskName "UnishieldSysmonInstall" -Action $action -Trigger $trigger -Principal $principal -Force 2>&1 | Out-Null
+                    Log "Scheduled UnishieldSysmonInstall to run at next boot (auto-finishes Sysmon)"
+                }
+            }
         } catch {
             Log "Sysmon install exception: $($_.Exception.Message)"
         }
