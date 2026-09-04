@@ -40,22 +40,25 @@ try {
 }
 
 # ---------------------------------------------------------------------------
-# 2. auditpol - enable audit subcategories (Security channel events)
+# 2. auditpol - enable audit categories (Security channel events)
+#    Uses category form via cmd.exe (subcategory form + PowerShell mangling
+#    returns error 87 on some systems; categories set all subcategories).
 # ---------------------------------------------------------------------------
-$auditRules = @(
-    @{ Category = "Logon/Logoff";         Success = "enable"; Failure = "enable" },
-    @{ Category = "Account Logon";        Success = "enable"; Failure = "enable" },
-    @{ Category = "Account Management";   Success = "enable"; Failure = "enable" },
-    @{ Category = "Detailed Tracking";    Success = "enable"; Failure = "enable" },
-    @{ Category = "Policy Change";        Success = "enable"; Failure = "enable" },
-    @{ Category = "Object Access";        Success = "enable"; Failure = "enable" },
-    @{ Category = "Privilege Use";        Success = "enable"; Failure = "enable" },
-    @{ Category = "System";               Success = "enable"; Failure = "enable" }
+$auditCats = @(
+    "Logon/Logoff",
+    "Account Logon",
+    "Account Management",
+    "Detailed Tracking",
+    "Policy Change",
+    "Object Access",
+    "Privilege Use",
+    "System"
 )
-foreach ($r in $auditRules) {
-    $res = Run "auditpol.exe" @("/set", "/subcategory:`"$($r.Category)`"", "/success:$($r.Success)", "/failure:$($r.Failure)")
-    if ($res.Code -eq 0) { Log "auditpol OK: $($r.Category)" }
-    else { Log "auditpol FAIL: $($r.Category) (code $($res.Code)): $($res.Output)" }
+foreach ($cat in $auditCats) {
+    $cmd = "auditpol.exe /set /category:`"$cat`" /success:enable /failure:enable"
+    & cmd.exe /c $cmd 2>&1 | Out-Null
+    if ($LASTEXITCODE -eq 0) { Log "auditpol OK: $cat" }
+    else { Log "auditpol FAIL: $cat (code $LASTEXITCODE)" }
 }
 
 # ---------------------------------------------------------------------------
@@ -78,9 +81,10 @@ $channels = @(
 )
 foreach ($ch in $channels) {
     $bytes = [int64]$ch.SizeMB * 1MB
-    $res = Run "wevtutil.exe" @("sl", $ch.Name, "/ms:$bytes", "/rt:true", "/e:true")
-    if ($res.Code -eq 0) { Log "rotation OK: $($ch.Name) ($($ch.SizeMB)MB, retain-oldest)" }
-    else { Log "rotation skip: $($ch.Name) (code $($res.Code))" }
+    $cmd = "wevtutil.exe sl `"$($ch.Name)`" /ms:$bytes /rt:true /e:true"
+    & cmd.exe /c $cmd 2>&1 | Out-Null
+    if ($LASTEXITCODE -eq 0) { Log "rotation OK: $($ch.Name) ($($ch.SizeMB)MB, retain-oldest)" }
+    else { Log "rotation skip: $($ch.Name) (code $LASTEXITCODE)" }
 }
 
 # ---------------------------------------------------------------------------
