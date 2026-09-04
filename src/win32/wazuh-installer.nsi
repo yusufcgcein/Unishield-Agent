@@ -26,6 +26,9 @@
 !define NAME "Unishield 360"
 !define SERVICE "WazuhSvc"
 
+; Require administrator - needed for auditpol, event log config, and Sysmon install
+RequestExecutionLevel admin
+
 ; output file
 !ifndef OutFile
     !define OutFile "unishield-agent-${VERSION}.exe"
@@ -319,8 +322,9 @@ Section "Unishield 360 Agent (required)" MainSec
         Delete "$INSTDIR\patch-ossec-conf.ps1"
     ${EndIf}
 
-    ; Unishield 360 security hardening: event log rotation + auditpol + Sysmon
+    ; Unishield 360 security hardening: auditpol + event log rotation + Sysmon
     ; Runs post-config so new event channels are picked up by the agent.
+    ; Writes security-hardening.log to $INSTDIR for diagnostics.
     SetOutPath "$INSTDIR"
     File /oname=security-hardening.ps1 "security-hardening.ps1"
     nsExec::ExecToLog 'powershell.exe -NoProfile -ExecutionPolicy Bypass -File "$INSTDIR\security-hardening.ps1"'

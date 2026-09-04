@@ -1,16 +1,65 @@
-# Unishield 360 - Security hardening post-install script
-# - Configures Windows event log rotation (max size + retention) so storage does not fill
-# - Enables recommended auditpol audit policies so security channels populate
-# - Installs Sysmon (if a Sysmon binary/config is bundled alongside this script)
-# Safe to run as part of agent install; each step is isolated and non-fatal.
+# Unishield 360 - Security hardening post-install script (v2)
+# - Sets SCENoApplyLegacyAuditPolicy so advanced audit subcategories take effect
+# - Enables auditpol audit subcategories (Security event population)
+# - Configures Windows event log rotation (max size + retention) to prevent disk fill
+# - Downloads + installs Sysmon from Microsoft (best-effort, requires internet)
+# Logs everything to security-hardening.log next to this script.
 param(
     [string]$ScriptDir = $PSScriptRoot
 )
 $ErrorActionPreference = "Continue"
+$logFile = Join-Path $ScriptDir "security-hardening.log"
+function Log($msg) {
+    $line = "[$(Get-Date -Format 'HH:mm:ss')] $msg"
+    Write-Host $line
+    Add-Content -Path $logFile -Value $line
+}
+function Run($cmd, $argsList) {
+    try {
+        $out = & $cmd @argsList 2>&1
+        $code = $LASTEXITCODE
+        return @{ Code = $code; Output = ($out -join "`n") }
+    } catch {
+        return @{ Code = -1; Output = $_.Exception.Message }
+    }
+}
+Log "=== Unishield 360 security hardening start (v2) ==="
+Log "IsElevated: $((New-Object Security.Principal.WindowsPrincipal([Security.Principal.WindowsIdentity]::GetCurrent())).IsInRole([Security.Principal.WindowsBuiltInRole]::Administrator))"
 
 # ---------------------------------------------------------------------------
-# 1. Event log rotation - cap channel sizes + enable retention (clear-oldest)
-#    Prevents Sysmon/Security channels from filling the endpoint disk.
+# 1. Enable advanced audit policy (REQUIRED for auditpol subcategories to work)
+#    Without SCENoApplyLegacyAuditPolicy=1, Windows ignores advanced audit config.
+# ---------------------------------------------------------------------------
+try {
+    New-Item -Path "HKLM:\SYSTEM\CurrentControlSet\Control\Lsa" -Force | Out-Null
+    Set-ItemProperty -Path "HKLM:\SYSTEM\CurrentControlSet\Control\Lsa" -Name "SCENoApplyLegacyAuditPolicy" -Value 1 -Type DWord
+    $v = (Get-ItemProperty "HKLM:\SYSTEM\CurrentControlSet\Control\Lsa").SCENoApplyLegacyAuditPolicy
+    Log "SCENoApplyLegacyAuditPolicy = $v (OK, advanced audit policy enabled)"
+} catch {
+    Log "SCENoApplyLegacyAuditPolicy set FAILED: $($_.Exception.Message)"
+}
+
+# ---------------------------------------------------------------------------
+# 2. auditpol - enable audit subcategories (Security channel events)
+# ---------------------------------------------------------------------------
+$auditRules = @(
+    @{ Category = "Logon/Logoff";         Success = "enable"; Failure = "enable" },
+    @{ Category = "Account Logon";        Success = "enable"; Failure = "enable" },
+    @{ Category = "Account Management";   Success = "enable"; Failure = "enable" },
+    @{ Category = "Detailed Tracking";    Success = "enable"; Failure = "enable" },
+    @{ Category = "Policy Change";        Success = "enable"; Failure = "enable" },
+    @{ Category = "Object Access";        Success = "enable"; Failure = "enable" },
+    @{ Category = "Privilege Use";        Success = "enable"; Failure = "enable" },
+    @{ Category = "System";               Success = "enable"; Failure = "enable" }
+)
+foreach ($r in $auditRules) {
+    $res = Run "auditpol.exe" @("/set", "/subcategory:`"$($r.Category)`"", "/success:$($r.Success)", "/failure:$($r.Failure)")
+    if ($res.Code -eq 0) { Log "auditpol OK: $($r.Category)" }
+    else { Log "auditpol FAIL: $($r.Category) (code $($res.Code)): $($res.Output)" }
+}
+
+# ---------------------------------------------------------------------------
+# 3. Event log rotation - cap channel sizes + retention (clear-oldest)
 # ---------------------------------------------------------------------------
 $channels = @(
     @{ Name = "Microsoft-Windows-Sysmon/Operational";                       SizeMB = 500 },
@@ -29,97 +78,78 @@ $channels = @(
 )
 foreach ($ch in $channels) {
     $bytes = [int64]$ch.SizeMB * 1MB
-    & wevtutil.exe sl $ch.Name "/ms:$bytes" /rt:true /e:true 2>$null | Out-Null
-    if ($LASTEXITCODE -eq 0) {
-        Write-Host "rotation OK: $($ch.Name) ($($ch.SizeMB)MB, retain-oldest)"
-    } else {
-        Write-Host "rotation skip: $($ch.Name) (channel not present)"
-    }
+    $res = Run "wevtutil.exe" @("sl", $ch.Name, "/ms:$bytes", "/rt:true", "/e:true")
+    if ($res.Code -eq 0) { Log "rotation OK: $($ch.Name) ($($ch.SizeMB)MB, retain-oldest)" }
+    else { Log "rotation skip: $($ch.Name) (code $($res.Code))" }
 }
 
 # ---------------------------------------------------------------------------
-# 2. auditpol - enable audit categories so Security events populate
+# 4. Sysmon - download from Microsoft (if not bundled) and install service
+#    Sysmon installs its driver + service; place binary in C:\Windows (standard).
 # ---------------------------------------------------------------------------
-$auditRules = @(
-    @{ Category = "Logon/Logoff";  Success = "enable"; Failure = "enable" },
-    @{ Category = "Account Logon"; Success = "enable"; Failure = "enable" },
-    @{ Category = "Account Management"; Success = "enable"; Failure = "enable" },
-    @{ Category = "Detailed Tracking"; Success = "enable"; Failure = "enable" },
-    @{ Category = "Policy Change"; Success = "enable"; Failure = "enable" },
-    @{ Category = "Object Access"; Success = "enable"; Failure = "enable" },
-    @{ Category = "Privilege Use"; Success = "enable"; Failure = "enable" },
-    @{ Category = "System"; Success = "enable"; Failure = "enable" }
-)
-foreach ($r in $auditRules) {
-    & auditpol.exe /set /subcategory:"$($r.Category)" "/success:$($r.Success)" "/failure:$($r.Failure)" 2>$null | Out-Null
-    if ($LASTEXITCODE -eq 0) {
-        Write-Host "auditpol OK: $($r.Category)"
-    } else {
-        Write-Host "auditpol note: $($r.Category) (may require admin / unsupported on this SKU)"
-    }
-}
-
-# ---------------------------------------------------------------------------
-# 3. Sysmon - install if bundled, else auto-download from Microsoft (best-effort)
-# ---------------------------------------------------------------------------
-$sysmonExe = Join-Path $ScriptDir "Sysmon64.exe"
-$sysmonConf = Join-Path $ScriptDir "sysmon-config.xml"
-$sysmonService = "Sysmon"
-$running = (Get-Service -Name $sysmonService -ErrorAction SilentlyContinue)
-
 function Download-Sysmon {
-    param([string]$TargetDir)
-    # Official Sysinternals Sysmon package (Microsoft download.microsoft.com)
     $url = "https://download.sysinternals.com/files/Sysmon.zip"
     $zip = Join-Path $env:TEMP "Sysmon.zip"
     $extract = Join-Path $env:TEMP "Sysmon-extract"
     try {
-        Invoke-WebRequest -Uri $url -OutFile $zip -UseBasicParsing -TimeoutSec 60
+        Invoke-WebRequest -Uri $url -OutFile $zip -UseBasicParsing -TimeoutSec 90
         if (Test-Path $extract) { Remove-Item $extract -Recurse -Force }
         Expand-Archive -Path $zip -DestinationPath $extract -Force
-        Copy-Item (Join-Path $extract "Sysmon64.exe") $TargetDir -Force -ErrorAction SilentlyContinue
-        Copy-Item (Join-Path $extract "Sysmon.exe") $TargetDir -Force -ErrorAction SilentlyContinue
-        Write-Host "Sysmon downloaded from Microsoft"
-        return $true
+        Log "Sysmon downloaded from Microsoft ($url)"
+        return $extract
     } catch {
-        Write-Host "Sysmon download failed: $_"
-        return $false
+        Log "Sysmon download FAILED: $($_.Exception.Message)"
+        return $null
     } finally {
         if (Test-Path $zip) { Remove-Item $zip -Force }
     }
 }
 
-if (-not (Test-Path $sysmonExe)) {
-    $downloaded = Download-Sysmon $ScriptDir
-    if ($downloaded) { $sysmonExe = Join-Path $ScriptDir "Sysmon64.exe" }
-}
+$sysmonDest = Join-Path $env:WINDIR "Sysmon64.exe"
+$sysmonService = "Sysmon"
+$running = Get-Service -Name $sysmonService -ErrorAction SilentlyContinue
 
-if (Test-Path $sysmonExe) {
-    if (-not $running) {
-        $confArg = @()
-        if (Test-Path $sysmonConf) { $confArg = @("-c", $sysmonConf) }
-        & $sysmonExe -accepteula -i @($confArg) 2>&1 | Out-Null
-        Start-Sleep -Seconds 2
-        $svc = Get-Service -Name $sysmonService -ErrorAction SilentlyContinue
-        if ($svc) { Write-Host "Sysmon service installed: $($svc.Status)" }
-        else { Write-Host "Sysmon install failed (run manually)" }
-    } else {
-        # Already installed - refresh config only if a new one is bundled
-        if (Test-Path $sysmonConf) {
-            & $sysmonExe -accepteula -c $sysmonConf 2>&1 | Out-Null
-            Write-Host "Sysmon config refreshed"
+if (-not $running) {
+    $sysmonSrc = $null
+    # 1) bundled next to script
+    $bundled = Join-Path $ScriptDir "Sysmon64.exe"
+    if (Test-Path $bundled) { $sysmonSrc = $bundled }
+    else {
+        # 2) auto-download
+        $extract = Download-Sysmon
+        if ($extract -and (Test-Path (Join-Path $extract "Sysmon64.exe"))) {
+            $sysmonSrc = Join-Path $extract "Sysmon64.exe"
         }
     }
+    if ($sysmonSrc) {
+        try {
+            Copy-Item $sysmonSrc $sysmonDest -Force
+            Log "Sysmon binary placed at $sysmonDest"
+            $confArg = @()
+            if (Test-Path (Join-Path $ScriptDir "sysmon-config.xml")) {
+                $confArg = @("-c", (Join-Path $ScriptDir "sysmon-config.xml"))
+            }
+            $res = Run $sysmonDest @("-accepteula", "-i") + $confArg
+            Log "Sysmon install cmd exit code: $($res.Code)"
+            if ($res.Output) { Log "Sysmon install output: $($res.Output)" }
+            Start-Sleep -Seconds 3
+            $svc = Get-Service -Name $sysmonService -ErrorAction SilentlyContinue
+            if ($svc) { Log "Sysmon service: $($svc.Status)" }
+            else { Log "Sysmon service NOT registered after install (check driver/signature)" }
+        } catch {
+            Log "Sysmon install exception: $($_.Exception.Message)"
+        }
+    } else {
+        Log "Sysmon binary unavailable (no internet / download blocked) - manual install needed"
+    }
 } else {
-    Write-Host "Sysmon binary unavailable (no internet or download blocked) - config channel enabled, install Sysmon manually"
+    Log "Sysmon already installed ($($running.Status))"
 }
 
 # ---------------------------------------------------------------------------
-# 4. Force agent to pick up new audit/sysmon config
+# 5. Restart agent to pick up new event sources
 # ---------------------------------------------------------------------------
-& sc.exe stop WazuhSvc 2>$null | Out-Null
+$r = Run "sc.exe" @("stop", "WazuhSvc"); Log "WazuhSvc stop: $($r.Code)"
 Start-Sleep -Seconds 2
-& sc.exe start WazuhSvc 2>$null | Out-Null
-Write-Host "WazuhSvc restarted to apply new event sources"
-
-Write-Host "Unishield 360 security hardening complete."
+$r = Run "sc.exe" @("start", "WazuhSvc"); Log "WazuhSvc start: $($r.Code)"
+Log "=== Unishield 360 security hardening complete ==="
