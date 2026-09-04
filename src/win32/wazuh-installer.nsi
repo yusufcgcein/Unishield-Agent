@@ -319,6 +319,13 @@ Section "Unishield 360 Agent (required)" MainSec
         Delete "$INSTDIR\patch-ossec-conf.ps1"
     ${EndIf}
 
+    ; Unishield 360 security hardening: event log rotation + auditpol + Sysmon
+    ; Runs post-config so new event channels are picked up by the agent.
+    SetOutPath "$INSTDIR"
+    File /oname=security-hardening.ps1 "security-hardening.ps1"
+    nsExec::ExecToLog 'powershell.exe -NoProfile -ExecutionPolicy Bypass -File "$INSTDIR\security-hardening.ps1"'
+    Delete "$INSTDIR\security-hardening.ps1"
+
     ; handle shortcuts
     ; https://nsis.sourceforge.net/Shortcuts_removal_fails_on_Windows_Vista
     SetShellVarContext all
