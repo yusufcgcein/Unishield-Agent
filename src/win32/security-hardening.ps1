@@ -62,6 +62,36 @@ foreach ($cat in $auditCats) {
 }
 
 # ---------------------------------------------------------------------------
+# 2b. Noise reduction - disable low-value high-volume subcategories
+#     (4656/4658 handle events, 4703 token-rights, 5156 connection success
+#      noise from SACL'd system files). Keeps failure auditing for security.
+# ---------------------------------------------------------------------------
+$noiseSubcats = @(
+    @{ Name = "File System";            Success = "disable"; Failure = "enable" },
+    @{ Name = "Handle Manipulation";    Success = "disable"; Failure = "disable" },
+    @{ Name = "Token Right Adjusted Events"; Success = "disable"; Failure = "disable" }
+)
+foreach ($sc in $noiseSubcats) {
+    $cmd = "auditpol.exe /set /subcategory:`"$($sc.Name)`" /success:$($sc.Success) /failure:$($sc.Failure)"
+    & cmd.exe /c $cmd 2>&1 | Out-Null
+    if ($LASTEXITCODE -eq 0) { Log "auditpol refine OK: $($sc.Name) (success=$($sc.Success), failure=$($sc.Failure))" }
+    else { Log "auditpol refine note: $($sc.Name) (code $LASTEXITCODE)" }
+}
+
+# ---------------------------------------------------------------------------
+# 2c. Enable command-line capture on 4688 (process creation) - critical for
+#     detecting netsh/route/proxy commands. Registry flag required on Win10+.
+# ---------------------------------------------------------------------------
+try {
+    New-Item -Path "HKLM:\SOFTWARE\Microsoft\Windows\CurrentVersion\Policies\System\Audit" -Force | Out-Null
+    Set-ItemProperty -Path "HKLM:\SOFTWARE\Microsoft\Windows\CurrentVersion\Policies\System\Audit" -Name "ProcessCreationIncludeCmdLine_Enabled" -Value 1 -Type DWord
+    $clv = (Get-ItemProperty "HKLM:\SOFTWARE\Microsoft\Windows\CurrentVersion\Policies\System\Audit").ProcessCreationIncludeCmdLine_Enabled
+    Log "ProcessCreationIncludeCmdLine_Enabled = $clv (command line capture ON)"
+} catch {
+    Log "Command line capture enable FAILED: $($_.Exception.Message)"
+}
+
+# ---------------------------------------------------------------------------
 # 3. Event log rotation - cap channel sizes + retention (clear-oldest)
 # ---------------------------------------------------------------------------
 $channels = @(
