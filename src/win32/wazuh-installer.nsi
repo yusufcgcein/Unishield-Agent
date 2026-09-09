@@ -135,6 +135,10 @@ Function .onInit
     ${IfNot} ${Errors}
         System::Call "Kernel32::SetEnvironmentVariable(t 'MB_INDEX', t '$1')"
     ${EndIf}
+    ${GetOptions} $0 "/ENROLL=" $1
+    ${IfNot} ${Errors}
+        System::Call "Kernel32::SetEnvironmentVariable(t 'WAZUH_REGISTRATION_PORT', t '$1')"
+    ${EndIf}
 
     ; stop service
     nsExec::ExecToStack 'sc query "${SERVICE}"'

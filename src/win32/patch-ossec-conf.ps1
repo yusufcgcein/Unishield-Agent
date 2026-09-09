@@ -13,4 +13,7 @@ if ($env:WAZUH_MANAGER_PORT) {
 if ($env:WAZUH_PROTOCOL) {
     $content = $content -replace '<protocol>[^<]*</protocol>', "<protocol>$($env:WAZUH_PROTOCOL)</protocol>"
 }
+if ($env:WAZUH_REGISTRATION_PORT) {
+    $content = $content -replace '(?s)(<enrollment>.*?<port>)[0-9]*(</port>.*?</enrollment>)', "`$1$($env:WAZUH_REGISTRATION_PORT)`$2"
+}
 [System.IO.File]::WriteAllText($Conf, $content)
