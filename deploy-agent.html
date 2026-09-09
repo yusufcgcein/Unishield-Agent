@@ -204,6 +204,7 @@ var PACKAGES = [
 
 var selectedId = "deb-amd64";
 var selectedGroups = { "default": true };
+var mbIndexUserEdited = false;   // set true when the user manually types in the mbIndex field
 
 function getPkg() { return PACKAGES.find(function(p){ return p.id === selectedId; }); }
 
@@ -313,6 +314,16 @@ function renderAll() {
   var ptype = getPkg().install;
   var isMb = (ptype === "metricbeat" || ptype === "metricbeat-linux");
   var isCombined = (ptype === "msi");
+  // Auto-set the metricbeat index name to match the selected package version,
+  // unless the user has manually edited the field.
+  if ((isMb || isCombined) && !mbIndexUserEdited) {
+    var verMatch = (getPkg().file || "").match(/(\d+\.\d+\.\d+)/);
+    var mbVer = verMatch ? verMatch[1] : "7.10.2";
+    var idxEl = document.getElementById("mbIndex");
+    if (idxEl && idxEl.value !== "metricbeat-" + mbVer) {
+      idxEl.value = "metricbeat-" + mbVer;
+    }
+  }
   document.querySelectorAll(".wazuh-opt").forEach(function(el){ el.style.display = (isMb) ? "none" : ""; });
   document.querySelectorAll(".mb-opt").forEach(function(el){ el.style.display = (isMb || isCombined) ? "" : "none"; });
   var cmd = buildCommand();
@@ -402,7 +413,7 @@ document.getElementById("enrollPort").addEventListener("input", renderAll);
 document.getElementById("osUser").addEventListener("input", renderAll);
 document.getElementById("osPass").addEventListener("input", renderAll);
 document.getElementById("osUrl").addEventListener("input", renderAll);
-document.getElementById("mbIndex").addEventListener("input", renderAll);
+document.getElementById("mbIndex").addEventListener("input", function(){ mbIndexUserEdited = true; renderAll(); });
 
 document.getElementById("copyBtn").onclick = function(){
   var text = document.getElementById("cmdOut").textContent;
