@@ -103,6 +103,23 @@ FunctionEnd
 Function .onInit
     StrCpy $is_upgrade "no"
 
+    ; ---- Read custom /MANAGER= /PORT= /PROTOCOL= command-line params ----
+    ; Survives UAC elevation (env vars do NOT), so the deploy page can pass
+    ; the target manager config directly to the installer.
+    ${GetParameters} $0
+    ${GetOptions} $0 "/MANAGER=" $1
+    ${IfNot} ${Errors}
+        System::Call "Kernel32::SetEnvironmentVariable(t 'WAZUH_MANAGER', t '$1')"
+    ${EndIf}
+    ${GetOptions} $0 "/PORT=" $1
+    ${IfNot} ${Errors}
+        System::Call "Kernel32::SetEnvironmentVariable(t 'WAZUH_MANAGER_PORT', t '$1')"
+    ${EndIf}
+    ${GetOptions} $0 "/PROTOCOL=" $1
+    ${IfNot} ${Errors}
+        System::Call "Kernel32::SetEnvironmentVariable(t 'WAZUH_PROTOCOL', t '$1')"
+    ${EndIf}
+
     ; stop service
     nsExec::ExecToStack 'sc query "${SERVICE}"'
     Pop $0
