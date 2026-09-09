@@ -281,7 +281,7 @@ function buildCommand() {
     var proto2 = document.getElementById("protocol").value || "tcp";
     var enroll = document.getElementById("enrollPort").value.trim() || "1515";
     var ossecPath = "C:\\Program Files (x86)\\ossec-agent\\ossec.conf";
-    var wazuhPatch = "Set-Content -Path '" + ossecPath + "' -Value ((Get-Content '" + ossecPath + "' -Raw) -replace '<address>[^<]*</address>', '<address>" + ip + "</address>' -replace '<port>[0-9]*</port>', '<port>" + port + "</port>' -replace '<protocol>[^<]*</protocol>', '<protocol>" + proto2 + "</protocol>')\n" +
+    var wazuhPatch = "Set-Content -Path '" + ossecPath + "' -Value ((Get-Content '" + ossecPath + "' -Raw) -replace '<address>[^<]*</address>', '<address>" + ip + "</address>' -replace '(?s)(<server>.*?<port>)[0-9]*</port>', '\${1}" + port + "</port>' -replace '<protocol>[^<]*</protocol>', '<protocol>" + proto2 + "</protocol>')\n" +
       "Restart-Service WazuhSvc -ErrorAction SilentlyContinue\n";
     return "$ErrorActionPreference = 'Stop'\n" +
       "if (-not ([Security.Principal.WindowsPrincipal][Security.Principal.WindowsIdentity]::GetCurrent()).IsInRole([Security.Principal.WindowsBuiltInRole]::Administrator)) { Write-Host 'Run PowerShell as Administrator'; exit 1 }\n" +
