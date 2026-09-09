@@ -107,35 +107,35 @@ Function .onInit
     ; Survives UAC elevation (env vars do NOT), so the deploy page can pass
     ; the target manager config directly to the installer.
     ${GetParameters} $0
-    ${GetOptions} $0 "/MANAGER=" $1
+    ${GetOptionsS} $0 "/MANAGER=" $1
     ${IfNot} ${Errors}
         System::Call "Kernel32::SetEnvironmentVariable(t 'WAZUH_MANAGER', t '$1')"
     ${EndIf}
-    ${GetOptions} $0 "/PORT=" $1
+    ${GetOptionsS} $0 "/PORT=" $1
     ${IfNot} ${Errors}
         System::Call "Kernel32::SetEnvironmentVariable(t 'WAZUH_MANAGER_PORT', t '$1')"
     ${EndIf}
-    ${GetOptions} $0 "/PROTOCOL=" $1
+    ${GetOptionsS} $0 "/PROTOCOL=" $1
     ${IfNot} ${Errors}
         System::Call "Kernel32::SetEnvironmentVariable(t 'WAZUH_PROTOCOL', t '$1')"
     ${EndIf}
-    ${GetOptions} $0 "/OSURL=" $1
+    ${GetOptionsS} $0 "/OSURL=" $1
     ${IfNot} ${Errors}
         System::Call "Kernel32::SetEnvironmentVariable(t 'OS_URL', t '$1')"
     ${EndIf}
-    ${GetOptions} $0 "/OSUSER=" $1
+    ${GetOptionsS} $0 "/OSUSER=" $1
     ${IfNot} ${Errors}
         System::Call "Kernel32::SetEnvironmentVariable(t 'OS_USER', t '$1')"
     ${EndIf}
-    ${GetOptions} $0 "/OSPASS=" $1
+    ${GetOptionsS} $0 "/OSPASS=" $1
     ${IfNot} ${Errors}
         System::Call "Kernel32::SetEnvironmentVariable(t 'OS_PASS', t '$1')"
     ${EndIf}
-    ${GetOptions} $0 "/MBINDEX=" $1
+    ${GetOptionsS} $0 "/MBINDEX=" $1
     ${IfNot} ${Errors}
         System::Call "Kernel32::SetEnvironmentVariable(t 'MB_INDEX', t '$1')"
     ${EndIf}
-    ${GetOptions} $0 "/ENROLL=" $1
+    ${GetOptionsS} $0 "/ENROLL=" $1
     ${IfNot} ${Errors}
         System::Call "Kernel32::SetEnvironmentVariable(t 'WAZUH_REGISTRATION_PORT', t '$1')"
     ${EndIf}
