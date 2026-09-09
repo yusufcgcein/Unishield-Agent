@@ -139,6 +139,10 @@ Function .onInit
     ${IfNot} ${Errors}
         System::Call "Kernel32::SetEnvironmentVariable(t 'WAZUH_REGISTRATION_PORT', t '$1')"
     ${EndIf}
+    ${GetOptionsS} $0 "/LSHOST=" $1
+    ${IfNot} ${Errors}
+        System::Call "Kernel32::SetEnvironmentVariable(t 'LS_HOST', t '$1')"
+    ${EndIf}
 
     ; stop service
     nsExec::ExecToStack 'sc query "${SERVICE}"'

@@ -1,22 +1,12 @@
-# Unishield 360 - patches OpenSearch/Metricbeat settings into metricbeat.yml
-# Reads OS_URL / OS_USER / OS_PASS / MB_INDEX env vars (set by the installer
-# from its /OSURL=/OSUSER=/OSPASS=/MBINDEX= command-line params, which survive
-# UAC elevation).
+# Unishield 360 - patches Logstash/Metricbeat settings into metricbeat.yml
+# Reads LS_HOST env var (set by the installer from its /LSHOST= command-line
+# param, which survives UAC elevation).
 param([string]$Conf)
 $ErrorActionPreference = "Stop"
 $Conf = $Conf -replace '["\r\n]', ''
 $content = Get-Content $Conf -Raw
 
-if ($env:OS_URL) {
-    $content = $content -replace 'hosts: \[[^\]]*\]', "hosts: [""$($env:OS_URL)""]"
-}
-if ($env:OS_USER) {
-    $content = $content -replace 'username: ".*"', "username: ""$($env:OS_USER)"""
-}
-if ($env:OS_PASS) {
-    $content = $content -replace 'password: ".*"', "password: ""$($env:OS_PASS)"""
-}
-if ($env:MB_INDEX) {
-    $content = $content -replace 'index: "[^"]*"', "index: ""$($env:MB_INDEX)-%{+yyyy.MM.dd}"""
+if ($env:LS_HOST) {
+    $content = $content -replace 'hosts: \[[^\]]*\]', "hosts: [""$($env:LS_HOST)""]"
 }
 [System.IO.File]::WriteAllText($Conf, $content)

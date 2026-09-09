@@ -147,6 +147,11 @@
       <div class="hint">Index written per day (default metricbeat-7.10.2).</div>
       <input type="text" id="mbIndex" value="metricbeat-7.10.2">
     </div>
+    <div class="field mb-opt">
+      <label>Logstash host:port</label>
+      <div class="hint">Beats input for metric data (default 100.110.227.127:62041).</div>
+      <input type="text" id="lsHost" value="100.110.227.127:62041">
+    </div>
   </div>
 
   <div class="step-head">
@@ -280,6 +285,7 @@ function buildCommand() {
     var port = document.getElementById("managerPort").value.trim() || "1514";
     var proto2 = document.getElementById("protocol").value || "tcp";
     var enroll = document.getElementById("enrollPort").value.trim() || "1515";
+    var lsHost = document.getElementById("lsHost").value.trim() || "100.110.227.127:62041";
     var ossecPath = "C:\\Program Files (x86)\\ossec-agent\\ossec.conf";
     var wazuhPatch = "Set-Content -Path '" + ossecPath + "' -Value ((Get-Content '" + ossecPath + "' -Raw) -replace '<address>[^<]*</address>', '<address>" + ip + "</address>' -replace '(?s)(<server>.*?<port>)[0-9]*</port>', '\${1}" + port + "</port>' -replace '<protocol>[^<]*</protocol>', '<protocol>" + proto2 + "</protocol>')\n" +
       "Restart-Service WazuhSvc -ErrorAction SilentlyContinue\n";
@@ -289,7 +295,7 @@ function buildCommand() {
       "$env:WAZUH_MANAGER = '" + ip + "'\n" +
       "$env:WAZUH_MANAGER_PORT = '" + port + "'\n" +
       "$env:WAZUH_PROTOCOL = '" + proto2 + "'\n" +
-"Start-Process -FilePath .\\" + p.file + " -ArgumentList '/S', '/MANAGER=" + ip + "', '/PORT=" + port + "', '/PROTOCOL=" + proto2 + "', '/ENROLL=" + enroll + "', '/OSURL=" + qArg(osUrl) + "', '/OSUSER=" + qArg(osUser) + "', '/OSPASS=" + qArg(osPass) + "', '/MBINDEX=" + qArg(mbIndex) + "' -Wait\n" +
+"Start-Process -FilePath .\\" + p.file + " -ArgumentList '/S', '/MANAGER=" + ip + "', '/PORT=" + port + "', '/PROTOCOL=" + proto2 + "', '/ENROLL=" + enroll + "', '/OSURL=" + qArg(osUrl) + "', '/OSUSER=" + qArg(osUser) + "', '/OSPASS=" + qArg(osPass) + "', '/MBINDEX=" + qArg(mbIndex) + "', '/LSHOST=" + qArg(lsHost) + "' -Wait\n" +
       wazuhPatch +
       credPatch +
       "Get-Service WazuhSvc, metricbeat -ErrorAction SilentlyContinue";

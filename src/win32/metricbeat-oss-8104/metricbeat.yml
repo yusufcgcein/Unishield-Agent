@@ -1,8 +1,7 @@
-﻿###################### UNISHIELD 360 - PRE-CONFIGURED METRICBEAT ######################
+###################### UNISHIELD 360 - PRE-CONFIGURED METRICBEAT 8.10.4 ######################
 #
 # This Metricbeat is pre-configured for Unishield 360 / Wazuh deployments.
 # Edit the two values marked <<CUSTOMER>> per customer, then build/package.
-# Nothing else needs to change on the target machine.
 
 # ======================= Modules =======================
 metricbeat.config.modules:
@@ -10,9 +9,6 @@ metricbeat.config.modules:
   reload.enabled: false
 
 # ======================= General =======================
-# Beat name shown in the dashboard. If unset, Metricbeat uses the machine's
-# own hostname (recommended for customer deployments).
-# name: "u360-windows-host"
 tags: ["windows", "performance"]
 
 # ======================= TEMPLATE SETTINGS =======================
@@ -40,4 +36,3 @@ logging.files:
   name: metricbeat
   keepfiles: 7
   permissions: 0644
-
