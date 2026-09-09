@@ -180,26 +180,28 @@ var WAZUH_BASE = "https://packages.wazuh.com/4.x";                  // Official 
 
 var PACKAGES = [
   // CentOS / RHEL / Fedora / Amazon Linux (RPM)
-  { id: "rpm-amd64",    os: "Linux RPM",    cls: "linux",   badge: "R",  arch: "amd64 / x86_64",   base: MY_BASE,    file: "unishield-agent-4.14.7-1.x86_64.rpm",   install: "rpm", shell: "bash" },
-  { id: "rpm-aarch64",  os: "Linux RPM",    cls: "linux",   badge: "R",  arch: "aarch64 / arm64",   base: WAZUH_BASE, file: "yum/wazuh-agent-4.14.7-1.aarch64.rpm", install: "rpm", shell: "bash" },
+  { id: "rpm-amd64",    os: "Linux RPM - Wazuh Agent",    cls: "linux",   badge: "R",  arch: "amd64 / x86_64",   base: MY_BASE,    file: "unishield-agent-4.14.7-1.x86_64.rpm",   install: "rpm", shell: "bash" },
+  { id: "rpm-aarch64",  os: "Linux RPM - Wazuh Agent",    cls: "linux",   badge: "R",  arch: "aarch64 / arm64",   base: WAZUH_BASE, file: "yum/wazuh-agent-4.14.7-1.aarch64.rpm", install: "rpm", shell: "bash" },
   // Ubuntu / Debian (DEB)
-  { id: "deb-amd64",    os: "Ubuntu / Debian", cls: "debian", badge: "D", arch: "amd64",            base: MY_BASE,    file: "unishield-agent_4.14.7-1_amd64.deb", install: "deb", shell: "bash" },
-  { id: "deb-aarch64",  os: "Ubuntu / Debian", cls: "debian", badge: "D", arch: "arm64 / aarch64",   base: WAZUH_BASE, file: "apt/pool/main/w/wazuh-agent/wazuh-agent_4.14.7-1_arm64.deb", install: "deb", shell: "bash" },
-  // Windows
-  { id: "msi",          os: "Windows",       cls: "windows", badge: "W", arch: "32/64-bit",          base: MY_BASE,    file: "unishield-agent-4.14.7.exe",   install: "msi", shell: "powershell" },
-  // Windows Metricbeat (performance metrics -> Unishield 360 indexer)
-  { id: "metricbeat-win", os: "Windows Metricbeat", cls: "windows", badge: "M", arch: "amd64",       base: MY_BASE,    file: "unishield-metric-agent-7.10.2.exe", install: "metricbeat", shell: "powershell" },
-  // Windows Metricbeat 8.10.4 (Logstash-compatible)
-  { id: "metricbeat-win-8104", os: "Windows Metricbeat 8.10.4", cls: "windows", badge: "M", arch: "amd64", base: MY_BASE, file: "unishield-metric-agent-8.10.4.exe", install: "metricbeat", shell: "powershell" },
-  // Linux Metricbeat (performance metrics -> Unishield 360 indexer)
-  { id: "metricbeat-deb", os: "Ubuntu / Debian Metricbeat", cls: "debian", badge: "M", arch: "amd64", base: MY_BASE, file: "unishield-metric-agent_7.10.2-1_amd64.deb", install: "metricbeat-linux", shell: "bash" },
-  { id: "metricbeat-rpm", os: "Linux RPM Metricbeat",       cls: "linux",   badge: "M", arch: "amd64", base: MY_BASE, file: "unishield-metric-agent-7.10.2-1.x86_64.rpm", install: "metricbeat-linux", shell: "bash" },
-  // Linux Metricbeat 8.10.4 (Logstash-compatible)
-  { id: "metricbeat-deb-8104", os: "Ubuntu / Debian Metricbeat 8.10.4", cls: "debian", badge: "M", arch: "amd64", base: MY_BASE, file: "unishield-metric-agent_8.10.4-1_amd64.deb", install: "metricbeat-linux", shell: "bash" },
-  { id: "metricbeat-rpm-8104", os: "Linux RPM Metricbeat 8.10.4",       cls: "linux",   badge: "M", arch: "amd64", base: MY_BASE, file: "unishield-metric-agent-8.10.4-1.x86_64.rpm", install: "metricbeat-linux", shell: "bash" },
+  { id: "deb-amd64",    os: "Ubuntu / Debian - Wazuh Agent", cls: "debian", badge: "D", arch: "amd64",            base: MY_BASE,    file: "unishield-agent_4.14.7-1_amd64.deb", install: "deb", shell: "bash" },
+  { id: "deb-aarch64",  os: "Ubuntu / Debian - Wazuh Agent", cls: "debian", badge: "D", arch: "arm64 / aarch64",   base: WAZUH_BASE, file: "apt/pool/main/w/wazuh-agent/wazuh-agent_4.14.7-1_arm64.deb", install: "deb", shell: "bash" },
+  // Windows - COMBINED: Wazuh agent + Metricbeat in one installer
+  { id: "msi",          os: "Windows - Wazuh Agent + Metricbeat 7.10.2", cls: "windows", badge: "W", arch: "32/64-bit", base: MY_BASE,    file: "unishield-agent-4.14.7.exe",   install: "msi", shell: "powershell", mbver: "7.10.2" },
+  // Windows - COMBINED: Wazuh agent + Metricbeat 8.10.4
+  { id: "msi-8104",     os: "Windows - Wazuh Agent + Metricbeat 8.10.4", cls: "windows", badge: "W", arch: "32/64-bit", base: MY_BASE,    file: "unishield-agent-4.14.7-8104.exe", install: "msi", shell: "powershell", mbver: "8.10.4" },
+  // Windows - Metricbeat ONLY (no Wazuh agent)
+  { id: "metricbeat-win", os: "Windows - Metricbeat ONLY 7.10.2", cls: "windows", badge: "M", arch: "amd64",       base: MY_BASE,    file: "unishield-metric-agent-7.10.2.exe", install: "metricbeat", shell: "powershell", mbver: "7.10.2" },
+  // Windows - Metricbeat ONLY 8.10.4 (Logstash-compatible)
+  { id: "metricbeat-win-8104", os: "Windows - Metricbeat ONLY 8.10.4", cls: "windows", badge: "M", arch: "amd64", base: MY_BASE, file: "unishield-metric-agent-8.10.4.exe", install: "metricbeat", shell: "powershell", mbver: "8.10.4" },
+  // Linux - Metricbeat ONLY
+  { id: "metricbeat-deb", os: "Ubuntu / Debian - Metricbeat ONLY 7.10.2", cls: "debian", badge: "M", arch: "amd64", base: MY_BASE, file: "unishield-metric-agent_7.10.2-1_amd64.deb", install: "metricbeat-linux", shell: "bash", mbver: "7.10.2" },
+  { id: "metricbeat-rpm", os: "Linux RPM - Metricbeat ONLY 7.10.2",       cls: "linux",   badge: "M", arch: "amd64", base: MY_BASE, file: "unishield-metric-agent-7.10.2-1.x86_64.rpm", install: "metricbeat-linux", shell: "bash", mbver: "7.10.2" },
+  // Linux - Metricbeat ONLY 8.10.4 (Logstash-compatible)
+  { id: "metricbeat-deb-8104", os: "Ubuntu / Debian - Metricbeat ONLY 8.10.4", cls: "debian", badge: "M", arch: "amd64", base: MY_BASE, file: "unishield-metric-agent_8.10.4-1_amd64.deb", install: "metricbeat-linux", shell: "bash", mbver: "8.10.4" },
+  { id: "metricbeat-rpm-8104", os: "Linux RPM - Metricbeat ONLY 8.10.4",       cls: "linux",   badge: "M", arch: "amd64", base: MY_BASE, file: "unishield-metric-agent-8.10.4-1.x86_64.rpm", install: "metricbeat-linux", shell: "bash", mbver: "8.10.4" },
   // macOS
-  { id: "macos-intel",  os: "macOS",         cls: "macos",   badge: "A", arch: "Intel",              base: WAZUH_BASE, file: "macos/wazuh-agent-4.14.7-1.intel64.pkg", install: "pkg", shell: "bash" },
-  { id: "macos-arm",    os: "macOS",         cls: "macos",   badge: "A", arch: "Apple silicon",      base: WAZUH_BASE, file: "macos/wazuh-agent-4.14.7-1.arm64.pkg",   install: "pkg", shell: "bash" }
+  { id: "macos-intel",  os: "macOS - Wazuh Agent",         cls: "macos",   badge: "A", arch: "Intel",              base: WAZUH_BASE, file: "macos/wazuh-agent-4.14.7-1.intel64.pkg", install: "pkg", shell: "bash" },
+  { id: "macos-arm",    os: "macOS - Wazuh Agent",         cls: "macos",   badge: "A", arch: "Apple silicon",      base: WAZUH_BASE, file: "macos/wazuh-agent-4.14.7-1.arm64.pkg",   install: "pkg", shell: "bash" }
 ];
 
 var selectedId = "deb-amd64";
@@ -317,8 +319,7 @@ function renderAll() {
   // Auto-set the metricbeat index name to match the selected package version,
   // unless the user has manually edited the field.
   if ((isMb || isCombined) && !mbIndexUserEdited) {
-    var verMatch = (getPkg().file || "").match(/(\d+\.\d+\.\d+)/);
-    var mbVer = verMatch ? verMatch[1] : "7.10.2";
+    var mbVer = getPkg().mbver || "7.10.2";
     var idxEl = document.getElementById("mbIndex");
     if (idxEl && idxEl.value !== "metricbeat-" + mbVer) {
       idxEl.value = "metricbeat-" + mbVer;
