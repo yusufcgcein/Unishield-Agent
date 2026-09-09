@@ -189,9 +189,14 @@ var PACKAGES = [
   { id: "msi",          os: "Windows",       cls: "windows", badge: "W", arch: "32/64-bit",          base: MY_BASE,    file: "unishield-agent-4.14.7.exe",   install: "msi", shell: "powershell" },
   // Windows Metricbeat (performance metrics -> Unishield 360 indexer)
   { id: "metricbeat-win", os: "Windows Metricbeat", cls: "windows", badge: "M", arch: "amd64",       base: MY_BASE,    file: "unishield-metric-agent-7.10.2.exe", install: "metricbeat", shell: "powershell" },
+  // Windows Metricbeat 8.10.4 (Logstash-compatible)
+  { id: "metricbeat-win-8104", os: "Windows Metricbeat 8.10.4", cls: "windows", badge: "M", arch: "amd64", base: MY_BASE, file: "unishield-metric-agent-8.10.4.exe", install: "metricbeat", shell: "powershell" },
   // Linux Metricbeat (performance metrics -> Unishield 360 indexer)
   { id: "metricbeat-deb", os: "Ubuntu / Debian Metricbeat", cls: "debian", badge: "M", arch: "amd64", base: MY_BASE, file: "unishield-metric-agent_7.10.2-1_amd64.deb", install: "metricbeat-linux", shell: "bash" },
   { id: "metricbeat-rpm", os: "Linux RPM Metricbeat",       cls: "linux",   badge: "M", arch: "amd64", base: MY_BASE, file: "unishield-metric-agent-7.10.2-1.x86_64.rpm", install: "metricbeat-linux", shell: "bash" },
+  // Linux Metricbeat 8.10.4 (Logstash-compatible)
+  { id: "metricbeat-deb-8104", os: "Ubuntu / Debian Metricbeat 8.10.4", cls: "debian", badge: "M", arch: "amd64", base: MY_BASE, file: "unishield-metric-agent_8.10.4-1_amd64.deb", install: "metricbeat-linux", shell: "bash" },
+  { id: "metricbeat-rpm-8104", os: "Linux RPM Metricbeat 8.10.4",       cls: "linux",   badge: "M", arch: "amd64", base: MY_BASE, file: "unishield-metric-agent-8.10.4-1.x86_64.rpm", install: "metricbeat-linux", shell: "bash" },
   // macOS
   { id: "macos-intel",  os: "macOS",         cls: "macos",   badge: "A", arch: "Intel",              base: WAZUH_BASE, file: "macos/wazuh-agent-4.14.7-1.intel64.pkg", install: "pkg", shell: "bash" },
   { id: "macos-arm",    os: "macOS",         cls: "macos",   badge: "A", arch: "Apple silicon",      base: WAZUH_BASE, file: "macos/wazuh-agent-4.14.7-1.arm64.pkg",   install: "pkg", shell: "bash" }
