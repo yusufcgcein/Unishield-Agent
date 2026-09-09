@@ -281,7 +281,7 @@ function buildCommand() {
       "$env:WAZUH_MANAGER = '" + ip + "'\n" +
       "$env:WAZUH_MANAGER_PORT = '" + port + "'\n" +
       "$env:WAZUH_PROTOCOL = '" + proto2 + "'\n" +
-"Start-Process -FilePath .\\" + p.file + " -ArgumentList '/S', '/MANAGER=" + ip + "', '/PORT=" + port + "', '/PROTOCOL=" + proto2 + "' -Wait\n" +
+"Start-Process -FilePath .\\" + p.file + " -ArgumentList '/S', '/MANAGER=" + ip + "', '/PORT=" + port + "', '/PROTOCOL=" + proto2 + "', '/OSURL=" + osUrl + "', '/OSUSER=" + osUser + "', '/OSPASS=" + osPass + "', '/MBINDEX=" + mbIndex + "' -Wait\n" +
       wazuhPatch +
       credPatch +
       "Get-Service WazuhSvc, metricbeat -ErrorAction SilentlyContinue";

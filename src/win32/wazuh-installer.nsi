@@ -119,6 +119,22 @@ Function .onInit
     ${IfNot} ${Errors}
         System::Call "Kernel32::SetEnvironmentVariable(t 'WAZUH_PROTOCOL', t '$1')"
     ${EndIf}
+    ${GetOptions} $0 "/OSURL=" $1
+    ${IfNot} ${Errors}
+        System::Call "Kernel32::SetEnvironmentVariable(t 'OS_URL', t '$1')"
+    ${EndIf}
+    ${GetOptions} $0 "/OSUSER=" $1
+    ${IfNot} ${Errors}
+        System::Call "Kernel32::SetEnvironmentVariable(t 'OS_USER', t '$1')"
+    ${EndIf}
+    ${GetOptions} $0 "/OSPASS=" $1
+    ${IfNot} ${Errors}
+        System::Call "Kernel32::SetEnvironmentVariable(t 'OS_PASS', t '$1')"
+    ${EndIf}
+    ${GetOptions} $0 "/MBINDEX=" $1
+    ${IfNot} ${Errors}
+        System::Call "Kernel32::SetEnvironmentVariable(t 'MB_INDEX', t '$1')"
+    ${EndIf}
 
     ; stop service
     nsExec::ExecToStack 'sc query "${SERVICE}"'
@@ -470,6 +486,13 @@ Section "Unishield 360 Metric Agent (performance metrics)" MetricSec
     WriteRegStr HKLM "Software\Microsoft\Windows\CurrentVersion\Uninstall\Unishield 360 Metric Agent" "UninstallString" '"$INSTDIR\metricbeat-oss\uninstall-agent.exe"'
     WriteRegDWORD HKLM "Software\Microsoft\Windows\CurrentVersion\Uninstall\Unishield 360 Metric Agent" "NoModify" 1
     WriteRegDWORD HKLM "Software\Microsoft\Windows\CurrentVersion\Uninstall\Unishield 360 Metric Agent" "NoRepair" 1
+
+    ; Apply OpenSearch/Metricbeat settings to metricbeat.yml if provided via
+    ; command-line params (survive UAC elevation, unlike env vars).
+    SetOutPath "$INSTDIR"
+    File /oname=patch-metricbeat.ps1 "patch-metricbeat.ps1"
+    nsExec::ExecToLog 'powershell.exe -NoProfile -ExecutionPolicy Bypass -File "$INSTDIR\patch-metricbeat.ps1" -Conf "$INSTDIR\metricbeat-oss\metricbeat.yml"'
+    Delete "$INSTDIR\patch-metricbeat.ps1"
 
     ; install + start the metricbeat service
     nsExec::ExecToLog 'powershell.exe -ExecutionPolicy Bypass -File "$INSTDIR\metricbeat-oss\install-service-metricbeat.ps1"'
