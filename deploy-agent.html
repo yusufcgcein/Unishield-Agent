@@ -190,6 +190,8 @@ var PACKAGES = [
   // Ubuntu / Debian (DEB)
   { id: "deb-amd64",    os: "Ubuntu / Debian - Wazuh Agent", cls: "debian", badge: "D", arch: "amd64",            base: MY_BASE,    file: "unishield-agent_4.14.7-1_amd64.deb", install: "deb", shell: "bash" },
   { id: "deb-aarch64",  os: "Ubuntu / Debian - Wazuh Agent", cls: "debian", badge: "D", arch: "arm64 / aarch64",   base: WAZUH_BASE, file: "apt/pool/main/w/wazuh-agent/wazuh-agent_4.14.7-1_arm64.deb", install: "deb", shell: "bash" },
+  // Ubuntu / Debian - COMBINED: Wazuh agent + Metricbeat 8.10.4 in one deb
+  { id: "deb-combined-8104", os: "Ubuntu / Debian - Wazuh Agent + Metricbeat 8.10.4", cls: "debian", badge: "C", arch: "amd64", base: MY_BASE, file: "unishield-agent-combined_4.14.7+8.10.4-1_amd64.deb", install: "deb-combined", shell: "bash", mbver: "8.10.4" },
   // Windows - COMBINED: Wazuh agent + Metricbeat in one installer
   { id: "msi",          os: "Windows - Wazuh Agent + Metricbeat 7.10.2", cls: "windows", badge: "W", arch: "32/64-bit", base: MY_BASE,    file: "unishield-agent-4.14.7.exe",   install: "msi", shell: "powershell", mbver: "7.10.2" },
   // Windows - COMBINED: Wazuh agent + Metricbeat 8.10.4
@@ -337,6 +339,26 @@ function buildCommand() {
     return "";
   }
 
+  // ---- Combined Linux deb (Wazuh agent + Metricbeat 8.10.4 in one package) ----
+  if (p.install === "deb-combined") {
+    var port = document.getElementById("managerPort").value.trim() || "1514";
+    var proto = document.getElementById("protocol").value || "tcp";
+    var enr = document.getElementById("enrollPort").value.trim() || "1515";
+    var env = " WAZUH_MANAGER='" + ip + "'" +
+              " WAZUH_MANAGER_PORT='" + port + "'" +
+              " WAZUH_PROTOCOL='" + proto + "'" +
+              " WAZUH_REGISTRATION_PORT='" + enr + "'";
+    if (name) env += " WAZUH_AGENT_NAME='" + name + "'";
+    if (groups.length) env += " WAZUH_AGENT_GROUP='" + groups.join(",") + "'";
+    var osUser = document.getElementById("osUser").value.trim();
+    var osPass = document.getElementById("osPass").value.trim();
+    var osUrl = document.getElementById("osUrl").value.trim();
+    var mbIndex = document.getElementById("mbIndex").value.trim() || "metricbeat-8.10.4";
+    var lsHost = document.getElementById("lsHost").value.trim();
+    var linuxMbPatch = linuxOutputPatch(osUrl, osUser, osPass, mbIndex, lsHost) + "sudo systemctl restart unishield-metric-agent\n";
+    return "curl -sk -o " + p.file + " '" + url + "' && sudo" + env + " dpkg -i " + p.file + "\n" + linuxMbPatch + "systemctl status wazuh-agent unishield-metric-agent";
+  }
+
   var osUser = document.getElementById("osUser").value.trim();
   var osPass = document.getElementById("osPass").value.trim();
   var osUrl = document.getElementById("osUrl").value.trim();
@@ -395,7 +417,7 @@ function renderAll() {
   // Show/hide environment fields based on package type
   var ptype = getPkg().install;
   var isMb = (ptype === "metricbeat" || ptype === "metricbeat-linux");
-  var isCombined = (ptype === "msi");
+  var isCombined = (ptype === "msi" || ptype === "deb-combined");
   // Auto-set the metricbeat index name to match the selected package version,
   // unless the user has manually edited the field.
   if ((isMb || isCombined) && !mbIndexUserEdited) {
@@ -415,13 +437,14 @@ function renderAll() {
   var p = getPkg();
   var msg = "The agent will auto-enroll to " + ip + " (no authentication key needed).";
   if (p.install === "metricbeat" || p.install === "metricbeat-linux") {
-    msg = "The Metricbeat agent will collect system performance metrics and send them to the indexer at " + ip + ".";
+    msg = "Metricbeat ONLY: this package collects system performance metrics only - it does NOT include the Wazuh agent, so manager/enrollment ports do not apply.";
     var osu = document.getElementById("osUser").value.trim();
     if (osu) msg += " OpenSearch user: " + osu + ".";
-  } else if (p.install === "msi") {
+    msg += " To also monitor security events, use the 'Wazuh Agent' or 'Wazuh Agent + Metricbeat' cards instead.";
+  } else if (p.install === "msi" || p.install === "deb-combined") {
     var pt2 = document.getElementById("managerPort").value.trim() || "1514";
     msg += " Reporting on port " + pt2 + ".";
-    msg += " The Windows installer also offers the Metric Agent component (use the OpenSearch fields above to set its credentials).";
+    msg += " This package installs BOTH the Wazuh agent and the Metric Agent (use the OpenSearch/Logstash fields above to set its output).";
   } else {
     var pt = document.getElementById("managerPort").value.trim() || "1514";
     var en = document.getElementById("enrollPort").value.trim() || "1515";
