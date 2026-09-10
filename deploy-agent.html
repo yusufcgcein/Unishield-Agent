@@ -129,13 +129,13 @@
     <!-- Metricbeat options (shown for metricbeat-win) -->
     <div class="field mb-opt">
       <label>OpenSearch / indexer URL</label>
-      <div class="hint">Indexer host:port (default https://100.110.74.122:9200).</div>
-      <input type="text" id="osUrl" value="https://100.110.74.122:9200">
+      <div class="hint">Indexer host:port. Blank leaves a INDEXER_HOST placeholder.</div>
+      <input type="text" id="osUrl" value="">
     </div>
     <div class="field mb-opt">
       <label>OpenSearch username</label>
       <div class="hint">Indexer user (default admin).</div>
-      <input type="text" id="osUser" value="admin">
+      <input type="text" id="osUser" value="">
     </div>
     <div class="field mb-opt">
       <label>OpenSearch password</label>
@@ -149,8 +149,8 @@
     </div>
     <div class="field mb-opt">
       <label>Logstash host:port</label>
-      <div class="hint">Beats input for metric data (default 100.110.227.127:62041).</div>
-      <input type="text" id="lsHost" value="100.110.227.127:62041">
+      <div class="hint">Beats input for metric data. Leave blank to use the OpenSearch indexer above.</div>
+      <input type="text" id="lsHost" value="">
     </div>
   </div>
 
@@ -222,6 +222,70 @@ function qArg(v) {
   return v;
 }
 
+// ---- Metricbeat output-block helpers (mode-aware) ----
+// Logstash host given -> Logstash output; otherwise OpenSearch indexer.
+function mbContentLines(mode, osUrl, osUser, osPass, mbIndex, lsHost) {
+  var L = [];
+  if (mode === "logstash") {
+    L.push("# Unishield 360 output selected: LOGSTASH (SPL metric pipeline).");
+    L.push("output.logstash:");
+    L.push('  hosts: ["' + lsHost + '"]');
+    L.push("  loadbalance: false");
+    L.push("");
+    L.push("# Alternate output: OpenSearch indexer (activate by leaving Logstash host blank).");
+    L.push("# output.elasticsearch:");
+    L.push('#   hosts: ["' + (osUrl || 'https://INDEXER_HOST:9200') + '"]');
+    L.push('#   protocol: "https"');
+    L.push('#   ssl.verification_mode: "none"');
+    L.push('#   username: "' + (osUser || 'INDEXER_USER') + '"');
+    L.push('#   password: "' + osPass + '"');
+    L.push("#   allow_older_versions: true");
+    L.push('#   index: "' + mbIndex + '-%{+yyyy.MM.dd}"');
+  } else {
+    L.push("# Unishield 360 output selected: OPENSEARCH INDEXER.");
+    L.push("output.elasticsearch:");
+    L.push('  hosts: ["' + (osUrl || 'https://INDEXER_HOST:9200') + '"]');
+    L.push('  protocol: "https"');
+    L.push('  ssl.verification_mode: "none"');
+    L.push('  username: "' + (osUser || 'INDEXER_USER') + '"');
+    L.push('  password: "' + osPass + '"');
+    L.push('  allow_older_versions: true');
+    L.push('  index: "' + mbIndex + '-%{+yyyy.MM.dd}"');
+    L.push("");
+    L.push("# Alternate output: Logstash (activate by providing a Logstash host).");
+    L.push("# output.logstash:");
+    L.push('#   hosts: ["LOGSTASH_HOST:PORT"]');
+    L.push("#   loadbalance: false");
+  }
+  return L;
+}
+
+// PowerShell: rewrite the marker-delimited output block in metricbeat.yml.
+function psOutputPatch(path, mode, osUrl, osUser, osPass, mbIndex, lsHost) {
+  var lines = mbContentLines(mode, osUrl, osUser, osPass, mbIndex, lsHost);
+  var quoted = [];
+  for (var i = 0; i < lines.length; i++) quoted.push("'" + lines[i].replace(/'/g, "''") + "'");
+  return "$p = '" + path + "'\n" +
+    "$s = '# <<U360_OUTPUT_BEGIN>>'\n" +
+    "$e = '# <<U360_OUTPUT_END>>'\n" +
+    "$n = @(" + quoted.join(", ") + ") -join \"`n\"\n" +
+    "$c = Get-Content $p -Raw\n" +
+    "$c = [regex]::Replace($c, '(?s)# <<U360_OUTPUT_BEGIN>>.*?# <<U360_OUTPUT_END>>', $s + \"`n\" + $n + \"`n\" + $e)\n" +
+    "Set-Content -Path $p -Value $c -Encoding UTF8\n" +
+    "Restart-Service metricbeat -ErrorAction SilentlyContinue\n";
+}
+
+// Linux: sed-based rewrite of the marker-delimited output block.
+function linuxOutputPatch(osUrl, osUser, osPass, mbIndex, lsHost) {
+  var mode = lsHost ? "logstash" : "indexer";
+  var lines = mbContentLines(mode, osUrl, osUser, osPass, mbIndex, lsHost);
+  var s = "sudo sed -i '/# <<U360_OUTPUT_BEGIN>>/,/# <<U360_OUTPUT_END>>/c\\\n";
+  for (var i = 0; i < lines.length; i++) s += lines[i] + (i < lines.length - 1 ? "\\\n" : "\n");
+  s += "' /etc/metricbeat/metricbeat.yml\n";
+  return s;
+}
+
+
 (function renderOs() {
   var grid = document.getElementById("osGrid");
   PACKAGES.forEach(function(p) {
@@ -273,19 +337,21 @@ function buildCommand() {
     return "";
   }
 
-  var osUser = document.getElementById("osUser").value.trim() || "admin";
+  var osUser = document.getElementById("osUser").value.trim();
   var osPass = document.getElementById("osPass").value.trim();
-  var osUrl = document.getElementById("osUrl").value.trim() || "https://100.110.74.122:9200";
+  var osUrl = document.getElementById("osUrl").value.trim();
   var mbIndex = document.getElementById("mbIndex").value.trim() || "metricbeat-7.10.2";
-  var urlRepl = "-replace 'hosts: \\[[^]]*\\]', 'hosts: [\"" + osUrl + "\"]'";
-  var credPatch = osPass ? "Set-Content -Path 'C:\\Program Files (x86)\\ossec-agent\\metricbeat-oss\\metricbeat.yml' -Value ((Get-Content 'C:\\Program Files (x86)\\ossec-agent\\metricbeat-oss\\metricbeat.yml' -Raw) " + urlRepl + " -replace 'username: \".*\"', 'username: \"" + osUser + "\"' -replace 'password: \".*\"', 'password: \"" + osPass + "\"' -replace 'index: \"[^\"]*\"', 'index: \"" + mbIndex + "-%{+yyyy.MM.dd}\"')\nRestart-Service metricbeat -ErrorAction SilentlyContinue\n" : "";
+  var enroll = document.getElementById("enrollPort").value.trim() || "1515";
+  var lsHost = document.getElementById("lsHost").value.trim();
+  var mbMode = lsHost ? "logstash" : "indexer";
+  var combinedMbPatch = psOutputPatch("C:\\Program Files (x86)\\ossec-agent\\metricbeat-oss\\metricbeat.yml", mbMode, osUrl, osUser, osPass, mbIndex, lsHost);
 
   // ---- Combined installer (Wazuh agent + optional Metricbeat component) ----
   if (p.install === "msi") {
     var port = document.getElementById("managerPort").value.trim() || "1514";
     var proto2 = document.getElementById("protocol").value || "tcp";
     var enroll = document.getElementById("enrollPort").value.trim() || "1515";
-    var lsHost = document.getElementById("lsHost").value.trim() || "100.110.227.127:62041";
+    var lsHost = document.getElementById("lsHost").value.trim();
     var ossecPath = "C:\\Program Files (x86)\\ossec-agent\\ossec.conf";
     var wazuhPatch = "Set-Content -Path '" + ossecPath + "' -Value ((Get-Content '" + ossecPath + "' -Raw) -replace '<address>[^<]*</address>', '<address>" + ip + "</address>' -replace '(?s)(<server>.*?<port>)[0-9]*</port>', '\${1}" + port + "</port>' -replace '<protocol>[^<]*</protocol>', '<protocol>" + proto2 + "</protocol>')\n" +
       "Restart-Service WazuhSvc -ErrorAction SilentlyContinue\n";
@@ -297,21 +363,21 @@ function buildCommand() {
       "$env:WAZUH_PROTOCOL = '" + proto2 + "'\n" +
 "Start-Process -FilePath .\\" + p.file + " -ArgumentList '/S', '/MANAGER=" + ip + "', '/PORT=" + port + "', '/PROTOCOL=" + proto2 + "', '/ENROLL=" + enroll + "', '/OSURL=" + qArg(osUrl) + "', '/OSUSER=" + qArg(osUser) + "', '/OSPASS=" + qArg(osPass) + "', '/MBINDEX=" + qArg(mbIndex) + "', '/LSHOST=" + qArg(lsHost) + "' -Wait\n" +
       wazuhPatch +
-      credPatch +
+      combinedMbPatch +
       "Get-Service WazuhSvc, metricbeat -ErrorAction SilentlyContinue";
   }
 
   // ---- Standalone Metricbeat (performance agent) ----
   var mbPath = "C:\\Program Files\\metricbeat-oss\\metricbeat.yml";
-  var mbCredPatch = osPass ? "Set-Content -Path '" + mbPath + "' -Value ((Get-Content '" + mbPath + "' -Raw) " + urlRepl + " -replace 'username: \".*\"', 'username: \"" + osUser + "\"' -replace 'password: \".*\"', 'password: \"" + osPass + "\"' -replace 'index: \"[^\"]*\"', 'index: \"" + mbIndex + "-%{+yyyy.MM.dd}\"')\nRestart-Service metricbeat -ErrorAction SilentlyContinue\n" : "";
+  var mbCredPatch = psOutputPatch(mbPath, mbMode, osUrl, osUser, osPass, mbIndex, lsHost);
 
   // ---- Linux Metricbeat (deb/rpm, config at /etc/metricbeat) ----
   if (p.install === "metricbeat-linux") {
-    var linuxPatch = osPass ? "sudo sed -i 's|hosts: \\[[^]]*\\]|hosts: [\"" + osUrl + "\"]|; s|username: \".*\"|username: \"" + osUser + "\"|; s|password: \".*\"|password: \"" + osPass + "\"|; s|index: \"[^\"]*\"|index: \"" + mbIndex + "-%{+yyyy.MM.dd}\"|' /etc/metricbeat/metricbeat.yml\nsudo systemctl restart unishield-metric-agent\n" : "sudo systemctl restart unishield-metric-agent\n";
-    if (p.install === "metricbeat-linux" && p.id === "metricbeat-deb") {
+    var linuxPatch = linuxOutputPatch(osUrl, osUser, osPass, mbIndex, lsHost) + "sudo systemctl restart unishield-metric-agent\n";
+    if (p.install === "metricbeat-linux" && /\.deb$/.test(p.file)) {
       return "curl -sk -o " + p.file + " '" + url + "' && sudo dpkg -i " + p.file + "\n" + linuxPatch + "systemctl status unishield-metric-agent";
     }
-    if (p.install === "metricbeat-linux" && p.id === "metricbeat-rpm") {
+    if (p.install === "metricbeat-linux" && /\.rpm$/.test(p.file)) {
       return "curl -sk -o " + p.file + " '" + url + "' && sudo rpm -ihv " + p.file + "\n" + linuxPatch + "systemctl status unishield-metric-agent";
     }
   }
@@ -379,10 +445,12 @@ function generateDownloadScript() {
   if (!ip) { alert("Enter a server address first"); return false; }
   var port = document.getElementById("managerPort").value.trim() || "1514";
   var proto = document.getElementById("protocol").value || "tcp";
-  var osUser = document.getElementById("osUser").value.trim() || "admin";
+  var osUser = document.getElementById("osUser").value.trim();
   var osPass = document.getElementById("osPass").value.trim();
-  var osUrl = document.getElementById("osUrl").value.trim() || "https://100.110.74.122:9200";
+  var osUrl = document.getElementById("osUrl").value.trim();
   var mbIndex = document.getElementById("mbIndex").value.trim() || "metricbeat-7.10.2";
+  var enroll = document.getElementById("enrollPort").value.trim() || "1515";
+  var lsHost = document.getElementById("lsHost").value.trim();
 
   var btn = document.getElementById("downloadBtn");
   btn.textContent = "Building your agent... (about 30s)";
@@ -394,7 +462,8 @@ function generateDownloadScript() {
     headers: { "Content-Type": "application/json" },
     body: JSON.stringify({
       ip: ip, port: port, protocol: proto,
-      osuser: osUser, ospass: osPass, osurl: osUrl, mbindex: mbIndex
+      enroll: enroll, osuser: osUser, ospass: osPass,
+      osurl: osUrl, mbindex: mbIndex, lshost: lsHost, pkg: selectedId
     })
   }).then(function(res){ return res.json(); }).then(function(data){
     btn.textContent = "Download pre-configured installer";
@@ -429,6 +498,7 @@ document.getElementById("osUser").addEventListener("input", renderAll);
 document.getElementById("osPass").addEventListener("input", renderAll);
 document.getElementById("osUrl").addEventListener("input", renderAll);
 document.getElementById("mbIndex").addEventListener("input", function(){ mbIndexUserEdited = true; renderAll(); });
+document.getElementById("lsHost").addEventListener("input", renderAll);
 
 document.getElementById("copyBtn").onclick = function(){
   var text = document.getElementById("cmdOut").textContent;
